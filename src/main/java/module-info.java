@@ -2,6 +2,7 @@ module hr.algebra.uno {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.graphics;
+    requires static lombok;
 
     exports hr.algebra.uno;
 

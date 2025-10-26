@@ -15,5 +15,5 @@ public enum Value {
     Reverse,
     Draw_Two,
     Wild,
-    Wild_Draw_Four;
+    Wild_Draw_Four
 }
