@@ -7,7 +7,17 @@ import java.io.IOException;
 
 public class GameController {
 
+    public void startNewGame() {
 
+    }
+
+    public void saveGame() {
+
+    }
+
+    public void loadGame() {
+
+    }
 
     public void generateDocumentation(ActionEvent actionEvent) {
         try {
