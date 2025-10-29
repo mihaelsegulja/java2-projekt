@@ -14,7 +14,7 @@ public class GameController {
     private GameEngine gameEngine = new GameEngine();
 
     public void startNewGame() {
-
+        gameEngine.startNewGame();
     }
 
     public void saveGame() {

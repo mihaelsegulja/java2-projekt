@@ -1,31 +1,24 @@
 package hr.algebra.uno.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@AllArgsConstructor
 public class Player {
     private final String name;
-    private List<Card> hand = new ArrayList<>();
-
-    public Player(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public List<Card> getHand() {
-        return hand;
-    }
+    private final List<Card> hand = new ArrayList<>();
 
     public void addCard(Card card) {
         hand.add(card);
     }
 
     public void addCards(List<Card> cards) {
-        for (int i = 0; i < cards.size(); i++) {
-            addCard(cards.get(i));
+        for (Card card : cards) {
+            addCard(card);
         }
     }
 
