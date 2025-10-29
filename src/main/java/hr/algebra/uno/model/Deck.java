@@ -32,4 +32,38 @@ public class Deck {
     public Card peekTopCard() {
         return discardPile.isEmpty() ? null : discardPile.peek();
     }
+
+    public void initializeStandardUnoDeck() {
+        drawPile.clear();
+        discardPile.clear();
+
+        // Add colored cards
+        for (Color color : List.of(Color.Red, Color.Green, Color.Blue, Color.Yellow)) {
+
+            // One ZERO per color
+            drawPile.add(new Card(color, Value.Zero));
+
+            // Two of each 1–9 per color
+            for (Value v : List.of(Value.One, Value.Two, Value.Three, Value.Four, Value.Five,
+                    Value.Six, Value.Seven, Value.Eight, Value.Nine)) {
+                drawPile.add(new Card(color, v));
+                drawPile.add(new Card(color, v));
+            }
+
+            // Two of each action card per color
+            for (Value v : List.of(Value.Skip, Value.Reverse, Value.Draw_Two)) {
+                drawPile.add(new Card(color, v));
+                drawPile.add(new Card(color, v));
+            }
+        }
+
+        // Add Wild and Wild Draw Four cards (no color)
+        for (int i = 0; i < 4; i++) {
+            drawPile.add(new Card(Color.Wild, Value.Wild));
+            drawPile.add(new Card(Color.Wild, Value.Wild_Draw_Four));
+        }
+
+        // Shuffle
+        shuffle();
+    }
 }
