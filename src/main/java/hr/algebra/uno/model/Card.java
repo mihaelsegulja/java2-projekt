@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @ToString
 @AllArgsConstructor
-public class Card {
+public class Card implements java.io.Serializable{
     private final Color color;
     private final Value value;
 }

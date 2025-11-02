@@ -3,6 +3,8 @@ module hr.algebra.uno {
     requires javafx.fxml;
     requires javafx.graphics;
     requires static lombok;
+    requires java.desktop;
+    requires org.slf4j;
 
     exports hr.algebra.uno;
 

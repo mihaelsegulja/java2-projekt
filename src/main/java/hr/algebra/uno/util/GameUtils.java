@@ -28,15 +28,4 @@ public class GameUtils {
 
         return gameState;
     }
-
-    private List<Player> createPlayers(List<String> names) {
-        return names.stream().map(Player::new).toList();
-    }
-
-    private Deck initializeDeck() {
-        Deck deck = new Deck();
-        deck.initializeStandardUnoDeck();
-        deck.shuffle();
-        return deck;
-    }
 }

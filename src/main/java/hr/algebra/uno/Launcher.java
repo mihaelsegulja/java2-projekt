@@ -1,9 +1,0 @@
-package hr.algebra.uno;
-
-import javafx.application.Application;
-
-public class Launcher {
-    public static void main(String[] args) {
-        Application.launch(UnoApplication.class, args);
-    }
-}

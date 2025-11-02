@@ -2,6 +2,7 @@ package hr.algebra.uno.util;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,6 +68,17 @@ public class DocumentationUtils {
                 }
                 else {
                     htmlBuilder.append("<h2>No constructor</h2><br />");
+                }
+
+                Field[] declaredFields = clazz.getDeclaredFields();
+                if(declaredFields.length > 0) {
+                    htmlBuilder.append("<h2>List of declared fields: </h2><br/>");
+                    for (Field field : declaredFields) {
+                        htmlBuilder.append("<h3>Field: ").append(field).append("</h3><br />");
+                    }
+                }
+                else {
+                    htmlBuilder.append("<h2>No fields</h2><br />");
                 }
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
