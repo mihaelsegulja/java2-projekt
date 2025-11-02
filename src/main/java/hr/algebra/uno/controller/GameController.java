@@ -2,22 +2,23 @@ package hr.algebra.uno.controller;
 
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.*;
+import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
 import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
 import hr.algebra.uno.util.GameUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Paint;
-import javafx.scene.paint.Stop;
+import javafx.scene.paint.*;
+import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -70,6 +71,7 @@ public class GameController {
         StackPane cardPane = new StackPane();
         cardPane.setPrefSize(80, 120);
         cardPane.setCursor(Cursor.HAND);
+        cardPane.setEffect(new DropShadow(10, javafx.scene.paint.Color.GRAY));
 
         Rectangle rect = new Rectangle(80, 120);
         rect.setArcWidth(10);
@@ -77,26 +79,77 @@ public class GameController {
         rect.setStroke(javafx.scene.paint.Color.BLACK);
 
         if (faceUp) {
-            rect.setFill(getColorForCard(card.getColor()));
+            rect.setFill(javafx.scene.paint.Color.WHITE);
 
-            Label label = new Label(card.getValue().toString());
-            label.setTextFill(javafx.scene.paint.Color.WHITE);
-            label.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            Rectangle innerRect = new Rectangle(70, 110);
+            innerRect.setArcWidth(8);
+            innerRect.setArcHeight(8);
+            innerRect.setFill(getColorForCard(card.getColor()));
 
-            cardPane.getChildren().addAll(rect, label);
+            String cardText = getCardDisplayText(card.getValue());
+
+            DropShadow textShadow = new DropShadow();
+            textShadow.setRadius(1.0);
+            textShadow.setOffsetX(1.0);
+            textShadow.setOffsetY(1.0);
+            textShadow.setColor(javafx.scene.paint.Color.BLACK);
+
+            Label centerLabel = new Label(cardText);
+
+            javafx.scene.paint.Color labelColor = javafx.scene.paint.Color.WHITE;
+
+            centerLabel.setTextFill(labelColor);
+            centerLabel.setEffect(textShadow);
+
+            FontWeight weight = (card.getValue().ordinal() <= 9) ? FontWeight.EXTRA_BOLD : FontWeight.BOLD;
+            int fontSize = (card.getValue().ordinal() <= 9) ? 36 : 24;
+            centerLabel.setFont(Font.font("Arial", weight, fontSize));
+
+            cardPane.getChildren().addAll(rect, innerRect, centerLabel);
+
+            String cornerText = getCardCornerText(card.getValue());
+
+            Label cornerLabelTL = new Label(cornerText);
+            cornerLabelTL.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
+            cornerLabelTL.setTextFill(labelColor);
+            cornerLabelTL.setEffect(textShadow);
+            StackPane.setAlignment(cornerLabelTL, Pos.TOP_LEFT);
+            cornerLabelTL.setTranslateX(10);
+            cornerLabelTL.setTranslateY(10);
+
+            Label cornerLabelBR = new Label(cornerText);
+            cornerLabelBR.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
+            cornerLabelBR.setTextFill(labelColor);
+            cornerLabelBR.setEffect(textShadow);
+            StackPane.setAlignment(cornerLabelBR, Pos.BOTTOM_RIGHT);
+            cornerLabelBR.setTranslateX(-10);
+            cornerLabelBR.setTranslateY(-10);
+            cornerLabelBR.setRotate(180);
+
+            cardPane.getChildren().addAll(cornerLabelTL, cornerLabelBR);
+
         } else {
-            rect.setFill(new LinearGradient(
+            rect.setFill(javafx.scene.paint.Color.WHITE);
+
+            Rectangle innerRect = new Rectangle(70, 110);
+            innerRect.setArcWidth(8);
+            innerRect.setArcHeight(8);
+            innerRect.setFill(new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.DARKRED),
                     new Stop(1, javafx.scene.paint.Color.BLACK)
             ));
 
+            Ellipse unoOval = new Ellipse(25, 15);
+            unoOval.setFill(javafx.scene.paint.Color.WHITE);
+            unoOval.setRotate(-20);
+
             Label unoText = new Label("UNO");
-            unoText.setTextFill(javafx.scene.paint.Color.WHITE);
-            unoText.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+            unoText.setTextFill(javafx.scene.paint.Color.GOLDENROD);
+            unoText.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 20));
             unoText.setRotate(-20);
 
-            cardPane.getChildren().addAll(rect, unoText);
+            cardPane.getChildren().addAll(rect, innerRect, unoOval, unoText);
         }
 
         return cardPane;
@@ -104,11 +157,71 @@ public class GameController {
 
     private Paint getColorForCard(Color color) {
         return switch (color) {
-            case Red -> javafx.scene.paint.Color.CRIMSON;
-            case Green -> javafx.scene.paint.Color.FORESTGREEN;
-            case Blue -> javafx.scene.paint.Color.ROYALBLUE;
-            case Yellow -> javafx.scene.paint.Color.GOLD;
-            case Wild -> javafx.scene.paint.Color.DARKGRAY;
+            case Red -> new LinearGradient(
+                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, javafx.scene.paint.Color.RED),
+                    new Stop(1, javafx.scene.paint.Color.MAROON)
+            );
+            case Green -> new LinearGradient(
+                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, javafx.scene.paint.Color.LIMEGREEN),
+                    new Stop(1, javafx.scene.paint.Color.FORESTGREEN)
+            );
+            case Blue -> new LinearGradient(
+                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, javafx.scene.paint.Color.BLUE),
+                    new Stop(1, javafx.scene.paint.Color.DARKBLUE)
+            );
+            case Yellow -> new LinearGradient(
+                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, javafx.scene.paint.Color.YELLOW),
+                    new Stop(1, javafx.scene.paint.Color.GOLDENROD)
+            );
+            case Wild -> new LinearGradient(
+                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+                    new Stop(0, javafx.scene.paint.Color.BLACK),
+                    new Stop(1, javafx.scene.paint.Color.DIMGRAY)
+            );
+        };
+    }
+
+    private String getCardDisplayText(Value value) {
+        return switch (value) {
+            case Zero -> "0";
+            case One -> "1";
+            case Two -> "2";
+            case Three -> "3";
+            case Four -> "4";
+            case Five -> "5";
+            case Six -> "6";
+            case Seven -> "7";
+            case Eight -> "8";
+            case Nine -> "9";
+            case Skip -> "SKIP";
+            case Reverse -> "REV";
+            case Draw_Two -> "+2";
+            case Wild -> "WILD";
+            case Wild_Draw_Four -> "W+4";
+        };
+    }
+
+    private String getCardCornerText(Value value) {
+        return switch (value) {
+            case Zero -> "0";
+            case One -> "1";
+            case Two -> "2";
+            case Three -> "3";
+            case Four -> "4";
+            case Five -> "5";
+            case Six -> "6";
+            case Seven -> "7";
+            case Eight -> "8";
+            case Nine -> "9";
+            case Skip -> "S";
+            case Reverse -> "R";
+            case Draw_Two -> "+2";
+            case Wild -> "W";
+            case Wild_Draw_Four -> "+4";
         };
     }
 
