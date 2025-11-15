@@ -16,4 +16,8 @@ public class GameState implements java.io.Serializable {
     private boolean clockwise = true;
     private Deck deck = new Deck();
     private boolean gameOver = false;
+
+    public Player getCurrentPlayer() {
+        return players.get(currentPlayerIndex);
+    }
 }

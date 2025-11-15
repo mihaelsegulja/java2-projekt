@@ -43,23 +43,23 @@ public class GameController {
     private static final int Player_1_Port = 9001;
     private static final int Player_2_Port = 9002;
 
-    public void startNewGame() {
-        List<String> playerNames;
-        if (playerType == PlayerType.Singleplayer) {
-            playerNames = List.of("Player", "Bot");
-        }
-        else {
-            playerNames = List.of("Player 2", "Player 1");
-        }
+    public void initialize() {
 
-        gameEngine.startNewGame(playerNames);
+    }
+
+    public void startNewGame() {
+        if (playerType == PlayerType.Player_1) {
+            gameEngine.startNewGame(List.of("Player 1", "Player 2"));
+        } else if (playerType == PlayerType.Player_2) {
+            gameEngine.startNewGame(List.of("Player 2", "Player 1"));
+        }
 
         if (playerType != PlayerType.Singleplayer) {
             if (playerType == PlayerType.Player_1) {
-                networkManager = new NetworkManager(playerType, Player_1_Port, Player_2_Port);
+                networkManager = new NetworkManager(playerType, Player_1_Port, Player_2_Port, this);
                 networkManager.startServer(gameEngine);
             } else if (playerType == PlayerType.Player_2) {
-                networkManager = new NetworkManager(playerType, Player_2_Port, Player_1_Port);
+                networkManager = new NetworkManager(playerType, Player_2_Port, Player_1_Port, this);
                 networkManager.startServer(gameEngine);
             }
         }
@@ -84,9 +84,9 @@ public class GameController {
             Rectangle innerRect = new Rectangle(70, 110);
             innerRect.setArcWidth(8);
             innerRect.setArcHeight(8);
-            innerRect.setFill(getColorForCard(card.getColor()));
+            innerRect.setFill(GameUtils.getColorForCard(card.getColor()));
 
-            String cardText = getCardDisplayText(card.getValue());
+            String cardText = GameUtils.getCardDisplayText(card.getValue());
 
             DropShadow textShadow = new DropShadow();
             textShadow.setRadius(1.0);
@@ -107,7 +107,7 @@ public class GameController {
 
             cardPane.getChildren().addAll(rect, innerRect, centerLabel);
 
-            String cornerText = getCardCornerText(card.getValue());
+            String cornerText = GameUtils.getCardCornerText(card.getValue());
 
             Label cornerLabelTL = new Label(cornerText);
             cornerLabelTL.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
@@ -155,76 +155,6 @@ public class GameController {
         return cardPane;
     }
 
-    private Paint getColorForCard(Color color) {
-        return switch (color) {
-            case Red -> new LinearGradient(
-                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, javafx.scene.paint.Color.RED),
-                    new Stop(1, javafx.scene.paint.Color.MAROON)
-            );
-            case Green -> new LinearGradient(
-                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, javafx.scene.paint.Color.LIMEGREEN),
-                    new Stop(1, javafx.scene.paint.Color.FORESTGREEN)
-            );
-            case Blue -> new LinearGradient(
-                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, javafx.scene.paint.Color.BLUE),
-                    new Stop(1, javafx.scene.paint.Color.DARKBLUE)
-            );
-            case Yellow -> new LinearGradient(
-                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, javafx.scene.paint.Color.YELLOW),
-                    new Stop(1, javafx.scene.paint.Color.GOLDENROD)
-            );
-            case Wild -> new LinearGradient(
-                    0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                    new Stop(0, javafx.scene.paint.Color.BLACK),
-                    new Stop(1, javafx.scene.paint.Color.DIMGRAY)
-            );
-        };
-    }
-
-    private String getCardDisplayText(Value value) {
-        return switch (value) {
-            case Zero -> "0";
-            case One -> "1";
-            case Two -> "2";
-            case Three -> "3";
-            case Four -> "4";
-            case Five -> "5";
-            case Six -> "6";
-            case Seven -> "7";
-            case Eight -> "8";
-            case Nine -> "9";
-            case Skip -> "SKIP";
-            case Reverse -> "REV";
-            case Draw_Two -> "+2";
-            case Wild -> "WILD";
-            case Wild_Draw_Four -> "W+4";
-        };
-    }
-
-    private String getCardCornerText(Value value) {
-        return switch (value) {
-            case Zero -> "0";
-            case One -> "1";
-            case Two -> "2";
-            case Three -> "3";
-            case Four -> "4";
-            case Five -> "5";
-            case Six -> "6";
-            case Seven -> "7";
-            case Eight -> "8";
-            case Nine -> "9";
-            case Skip -> "S";
-            case Reverse -> "R";
-            case Draw_Two -> "+2";
-            case Wild -> "W";
-            case Wild_Draw_Four -> "+4";
-        };
-    }
-
     private void renderGameState() {
         GameState state = gameEngine.getGameState();
         hbPlayerHand.getChildren().clear();
@@ -256,15 +186,27 @@ public class GameController {
 
 
     private void handleCardClick(Card card) {
-        Player current = gameEngine.getGameState().getPlayers().get(0);
+        GameState gameState = gameEngine.getGameState();
+        Player current = gameState.getPlayers().get(gameState.getCurrentPlayerIndex());
+        if (gameEngine.getGameState().getCurrentPlayerIndex() != 0) {
+            lbStatus.setText("Wait for your turn...");
+            return;
+        }
         gameEngine.playCard(current, card);
         renderGameState();
+        networkManager.sendGameState(gameEngine.getGameState());
     }
 
     private void handleDrawCardClick() {
-        Player current = gameEngine.getGameState().getPlayers().get(0);
+        GameState gameState = gameEngine.getGameState();
+        Player current = gameEngine.getGameState().getPlayers().get(gameState.getCurrentPlayerIndex());
+        if (gameEngine.getGameState().getCurrentPlayerIndex() != 0) {
+            lbStatus.setText("Wait for your turn...");
+            return;
+        }
         gameEngine.drawCard(current);
         renderGameState();
+        networkManager.sendGameState(gameEngine.getGameState());
     }
 
     public void saveGame() {

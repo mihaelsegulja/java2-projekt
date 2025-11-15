@@ -1,5 +1,6 @@
 package hr.algebra.uno.network;
 
+import hr.algebra.uno.controller.GameController;
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.GameState;
 import hr.algebra.uno.model.PlayerType;
@@ -18,11 +19,13 @@ public class NetworkManager {
     private final int listenPort;
     private final int targetPort;
     private final String host = "localhost";
+    private GameController gameController;
 
-    public NetworkManager(PlayerType playerType, int listenPort, int targetPort) {
+    public NetworkManager(PlayerType playerType, int listenPort, int targetPort, GameController gameController) {
         this.playerType = playerType;
         this.listenPort = listenPort;
         this.targetPort = targetPort;
+        this.gameController = gameController;
     }
 
     public void startServer(GameEngine engine) {
@@ -39,7 +42,7 @@ public class NetworkManager {
                 new Thread(() -> handleClient(socket, engine)).start();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -53,7 +56,7 @@ public class NetworkManager {
             oos.writeObject("ACK");
 
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
 

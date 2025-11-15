@@ -9,6 +9,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.algebra.uno.controller.GameController">
    <children>
@@ -44,7 +45,10 @@
                      <HBox.margin>
                         <Insets right="10.0" />
                      </HBox.margin></StackPane>
-                  <Label fx:id="lbStatus" alignment="CENTER" prefHeight="50.0" prefWidth="141.0" text="Status" />
+                  <Label fx:id="lbStatus" alignment="CENTER" prefHeight="50.0" prefWidth="275.0" text="Status">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font></Label>
                </children>
                <VBox.margin>
                   <Insets bottom="10.0" top="10.0" />
