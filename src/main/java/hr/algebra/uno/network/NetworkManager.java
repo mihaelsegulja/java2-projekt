@@ -55,9 +55,7 @@ public class NetworkManager {
             System.out.println("[" + playerType + "] Received GameState from remote player.");
             engine.setGameState(received);
 
-            Platform.runLater(() -> {
-                gameController.renderGameState();
-            });
+            Platform.runLater(() -> gameController.renderGameState());
             oos.writeObject("ACK");
 
         } catch (IOException | ClassNotFoundException e) {

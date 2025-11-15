@@ -1,8 +1,6 @@
 package hr.algebra.uno;
 
-import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.PlayerType;
-import hr.algebra.uno.network.NetworkManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -13,8 +11,6 @@ import java.io.IOException;
 
 public class UnoApplication extends Application {
     public static PlayerType playerType;
-    private GameEngine gameEngine;
-    private NetworkManager networkManager;
 
     public static void main(String[] args) {
         if (args.length == 0) {

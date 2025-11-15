@@ -1,10 +1,9 @@
 package hr.algebra.uno.engine;
 
 import hr.algebra.uno.model.*;
-import hr.algebra.uno.util.GameUtils;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class GameEngine {
     private GameState gameState;
@@ -53,7 +52,7 @@ public class GameEngine {
         GameState state = new GameState();
         state.setPlayers(players);
         state.setDeck(deck);
-        state.setCurrentPlayerIndex(0);
+        state.setCurrentPlayerIndex(new Random().nextInt(players.size()));
         state.setClockwise(true);
         state.setGameOver(false);
 
