@@ -4,6 +4,7 @@ import hr.algebra.uno.controller.GameController;
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.GameState;
 import hr.algebra.uno.model.PlayerType;
+import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,10 @@ public class NetworkManager {
             GameState received = (GameState) ois.readObject();
             System.out.println("[" + playerType + "] Received GameState from remote player.");
             engine.setGameState(received);
+
+            Platform.runLater(() -> {
+                gameController.renderGameState();
+            });
             oos.writeObject("ACK");
 
         } catch (IOException | ClassNotFoundException e) {

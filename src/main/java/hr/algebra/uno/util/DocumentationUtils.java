@@ -3,6 +3,7 @@ package hr.algebra.uno.util;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,6 +80,17 @@ public class DocumentationUtils {
                 }
                 else {
                     htmlBuilder.append("<h2>No fields</h2><br />");
+                }
+
+                Method[] declaredMethods = clazz.getDeclaredMethods();
+                if(declaredMethods.length > 0) {
+                    htmlBuilder.append("<h2>List of declared methods: </h2><br/>");
+                    for (Method method : declaredMethods) {
+                        htmlBuilder.append("<h3>Method: ").append(method).append("</h3><br />");
+                    }
+                }
+                else {
+                    htmlBuilder.append("<h2>No methods</h2><br />");
                 }
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);

@@ -2,7 +2,6 @@ package hr.algebra.uno.controller;
 
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.*;
-import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
 import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
@@ -42,29 +41,30 @@ public class GameController {
     private NetworkManager networkManager;
     private static final int Player_1_Port = 9001;
     private static final int Player_2_Port = 9002;
+    private int localPlayerIndex;
 
     public void initialize() {
-
+        if (playerType != PlayerType.Singleplayer) {
+            if (playerType == PlayerType.Player_1) {
+                localPlayerIndex = 0;
+                networkManager = new NetworkManager(playerType, Player_1_Port, Player_2_Port, this);
+                networkManager.startServer(gameEngine);
+            } else if (playerType == PlayerType.Player_2) {
+                localPlayerIndex = 1;
+                networkManager = new NetworkManager(playerType, Player_2_Port, Player_1_Port, this);
+                networkManager.startServer(gameEngine);
+            }
+        }
     }
 
     public void startNewGame() {
         if (playerType == PlayerType.Player_1) {
             gameEngine.startNewGame(List.of("Player 1", "Player 2"));
+            networkManager.sendGameState(gameEngine.getGameState());
+            renderGameState();
         } else if (playerType == PlayerType.Player_2) {
             gameEngine.startNewGame(List.of("Player 2", "Player 1"));
         }
-
-        if (playerType != PlayerType.Singleplayer) {
-            if (playerType == PlayerType.Player_1) {
-                networkManager = new NetworkManager(playerType, Player_1_Port, Player_2_Port, this);
-                networkManager.startServer(gameEngine);
-            } else if (playerType == PlayerType.Player_2) {
-                networkManager = new NetworkManager(playerType, Player_2_Port, Player_1_Port, this);
-                networkManager.startServer(gameEngine);
-            }
-        }
-
-        renderGameState();
     }
 
     private Node createCardNode(Card card, boolean faceUp) {
@@ -155,7 +155,7 @@ public class GameController {
         return cardPane;
     }
 
-    private void renderGameState() {
+    public void renderGameState() {
         GameState state = gameEngine.getGameState();
         hbPlayerHand.getChildren().clear();
         hbOpponentHand.getChildren().clear();
@@ -163,13 +163,14 @@ public class GameController {
         spDiscardPile.getChildren().clear();
 
         // Player hand (face-up)
-        for (Card card : state.getPlayers().get(0).getHand()) {
+        for (Card card : state.getPlayers().get(localPlayerIndex).getHand()) {
             hbPlayerHand.getChildren().add(createCardNode(card, true));
+            hbPlayerHand.setOnMouseClicked(e -> handleCardClick(card));
         }
 
         // Opponent hand (back only)
-        int opponentCardCount = state.getPlayers().get(1).getHand().size();
-        for (int i = 0; i < opponentCardCount; i++) {
+        int opponentCardCount = state.getPlayers().get(opponentPlayerIndex()).getHand().size();
+        for (int j = 0; j < opponentCardCount; j++) {
             hbOpponentHand.getChildren().add(createCardNode(null, false));
         }
 
@@ -187,7 +188,7 @@ public class GameController {
 
     private void handleCardClick(Card card) {
         GameState gameState = gameEngine.getGameState();
-        Player current = gameState.getPlayers().get(gameState.getCurrentPlayerIndex());
+        Player current = gameState.getPlayers().get(localPlayerIndex);
         if (gameEngine.getGameState().getCurrentPlayerIndex() != 0) {
             lbStatus.setText("Wait for your turn...");
             return;
@@ -199,7 +200,7 @@ public class GameController {
 
     private void handleDrawCardClick() {
         GameState gameState = gameEngine.getGameState();
-        Player current = gameEngine.getGameState().getPlayers().get(gameState.getCurrentPlayerIndex());
+        Player current = gameEngine.getGameState().getPlayers().get(localPlayerIndex);
         if (gameEngine.getGameState().getCurrentPlayerIndex() != 0) {
             lbStatus.setText("Wait for your turn...");
             return;
@@ -207,6 +208,10 @@ public class GameController {
         gameEngine.drawCard(current);
         renderGameState();
         networkManager.sendGameState(gameEngine.getGameState());
+    }
+
+    private int opponentPlayerIndex() {
+        return localPlayerIndex == 0 ? 1 : 0;
     }
 
     public void saveGame() {
