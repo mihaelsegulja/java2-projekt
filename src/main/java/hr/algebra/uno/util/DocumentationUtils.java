@@ -17,7 +17,7 @@ public class DocumentationUtils {
 
     public static void generateDocumentationHtmlFile() throws IOException {
         Path start = Paths.get(PATH_WITH_CLASSES);
-        try(Stream<Path> stream = Files.walk(start, Integer.MAX_VALUE)) {
+        try (Stream<Path> stream = Files.walk(start, Integer.MAX_VALUE)) {
             List<String> classList = stream
                     .filter(f -> f.getFileName().toString().endsWith(CLASS_FILE_NAME_EXTENSION)
                             && Character.isUpperCase(f.getFileName().toString().charAt(0)))
@@ -61,35 +61,32 @@ public class DocumentationUtils {
                         .append("</h1><br/>");
 
                 Constructor<?>[] constructors = clazz.getConstructors();
-                if(constructors.length > 0) {
+                if (constructors.length > 0) {
                     htmlBuilder.append("<h2>List of constructors: </h2><br/>");
                     for (Constructor<?> constructor : constructors) {
                         htmlBuilder.append("<h3>Constructor: ").append(constructor).append("</h3><br />");
                     }
-                }
-                else {
+                } else {
                     htmlBuilder.append("<h2>No constructor</h2><br />");
                 }
 
                 Field[] declaredFields = clazz.getDeclaredFields();
-                if(declaredFields.length > 0) {
+                if (declaredFields.length > 0) {
                     htmlBuilder.append("<h2>List of declared fields: </h2><br/>");
                     for (Field field : declaredFields) {
                         htmlBuilder.append("<h3>Field: ").append(field).append("</h3><br />");
                     }
-                }
-                else {
+                } else {
                     htmlBuilder.append("<h2>No fields</h2><br />");
                 }
 
                 Method[] declaredMethods = clazz.getDeclaredMethods();
-                if(declaredMethods.length > 0) {
+                if (declaredMethods.length > 0) {
                     htmlBuilder.append("<h2>List of declared methods: </h2><br/>");
                     for (Method method : declaredMethods) {
                         htmlBuilder.append("<h3>Method: ").append(method).append("</h3><br />");
                     }
-                }
-                else {
+                } else {
                     htmlBuilder.append("<h2>No methods</h2><br />");
                 }
             } catch (ClassNotFoundException e) {

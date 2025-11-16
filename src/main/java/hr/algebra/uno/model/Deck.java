@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
-public class Deck implements java.io.Serializable{
+public class Deck implements java.io.Serializable {
     @Getter
     private final Stack<Card> drawPile = new Stack<>();
     @Getter

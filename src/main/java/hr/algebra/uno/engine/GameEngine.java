@@ -8,7 +8,7 @@ import java.util.Random;
 public class GameEngine {
     private GameState gameState;
 
-    public GameEngine() {}
+    public GameEngine() { }
 
     public GameEngine(GameState state) {
         this.gameState = state;
@@ -79,6 +79,26 @@ public class GameEngine {
         nextTurn();
     }
 
+    public void playCard(Player player, Card card, Color chosenColor) {
+        Card topCard = gameState.getDeck().peekTopCard();
+        if (!isValidMove(card, topCard)) return;
+
+        card.setWildColor(chosenColor);
+
+        player.removeCard(card);
+        gameState.getDeck().discard(card);
+
+        applyCardEffect(card);
+
+        if (player.getHand().isEmpty()) {
+            gameState.setGameOver(true);
+            return;
+        }
+
+        nextTurn();
+    }
+
+
     public void drawCard(Player player) {
         Card drawn = gameState.getDeck().drawCard();
 
@@ -122,7 +142,7 @@ public class GameEngine {
                 next.addCards(gameState.getDeck().drawCards(4));
                 nextTurn();
             }
-            default -> {}
+            default -> { }
         }
     }
 

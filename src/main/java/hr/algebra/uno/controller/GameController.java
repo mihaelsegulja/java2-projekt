@@ -2,6 +2,7 @@ package hr.algebra.uno.controller;
 
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.*;
+import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
 import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
@@ -14,7 +15,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +24,16 @@ import java.util.List;
 import static hr.algebra.uno.UnoApplication.playerType;
 
 public class GameController {
-    @FXML private HBox hbPlayerHand;
-    @FXML private HBox hbOpponentHand;
-    @FXML private StackPane spDrawPile;
-    @FXML private StackPane spDiscardPile;
-    @FXML private Label lbStatus;
+    @FXML
+    private HBox hbPlayerHand;
+    @FXML
+    private HBox hbOpponentHand;
+    @FXML
+    private StackPane spDrawPile;
+    @FXML
+    private StackPane spDiscardPile;
+    @FXML
+    private Label lbStatus;
 
     private static final Logger log = LoggerFactory.getLogger(GameController.class);
     private GameEngine gameEngine = new GameEngine();
@@ -36,6 +41,7 @@ public class GameController {
     private static final int Player_1_Port = 9001;
     private static final int Player_2_Port = 9002;
     private int localPlayerIndex;
+    public static boolean gameInitialized = false;
 
     public void initialize() {
         if (playerType != PlayerType.Singleplayer) {
@@ -52,12 +58,18 @@ public class GameController {
     }
 
     public void startNewGame() {
+        if (gameInitialized) {
+            lbStatus.setText("Game already initialized by another player.");
+            return;
+        }
+
         if (playerType == PlayerType.Player_1) {
             gameEngine.startNewGame(List.of("Player 1", "Player 2"));
             networkManager.sendGameState(gameEngine.getGameState());
             renderGameState();
+            gameInitialized = true;
         } else if (playerType == PlayerType.Player_2) {
-            gameEngine.startNewGame(List.of("Player 2", "Player 1"));
+            lbStatus.setText("Waiting for Player 1 to start the game...");
         }
     }
 
@@ -116,7 +128,12 @@ public class GameController {
             lbStatus.setText("Wait for your turn...");
             return;
         }
-        gameEngine.playCard(current, card);
+        if (card.getColor() == Color.Wild) {
+            Color chosenColor = DialogUtils.showColorPickerDialog();
+            gameEngine.playCard(current, card, chosenColor);
+        } else {
+            gameEngine.playCard(current, card);
+        }
         renderGameState();
         networkManager.sendGameState(gameEngine.getGameState());
     }
