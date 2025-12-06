@@ -19,7 +19,7 @@ public class NetworkManager {
     private final PlayerType playerType;
     private final int listenPort;
     private final int targetPort;
-    private final String host = "localhost";
+    private static final String host = "localhost";
     private GameController gameController;
 
     public NetworkManager(PlayerType playerType, int listenPort, int targetPort, GameController gameController) {

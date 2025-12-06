@@ -4,36 +4,43 @@ import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.model.*;
 import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
+import hr.algebra.uno.rmi.ChatRemoteService;
+import hr.algebra.uno.rmi.RmiServer;
 import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
 import hr.algebra.uno.util.GameUtils;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.List;
 
 import static hr.algebra.uno.UnoApplication.playerType;
 
 public class GameController {
-    @FXML
-    private HBox hbPlayerHand;
-    @FXML
-    private HBox hbOpponentHand;
-    @FXML
-    private StackPane spDrawPile;
-    @FXML
-    private StackPane spDiscardPile;
-    @FXML
-    private Label lbStatus;
+    @FXML public TextField tfChat;
+    @FXML public Button btnChat;
+    @FXML public TextArea taChat;
+    @FXML private HBox hbPlayerHand;
+    @FXML private HBox hbOpponentHand;
+    @FXML private StackPane spDrawPile;
+    @FXML private StackPane spDiscardPile;
+    @FXML private Label lbStatus;
 
     private static final Logger log = LoggerFactory.getLogger(GameController.class);
     private GameEngine gameEngine = new GameEngine();
@@ -42,6 +49,7 @@ public class GameController {
     private static final int Player_2_Port = 9002;
     private int localPlayerIndex;
     public static boolean gameInitialized = false;
+    ChatRemoteService chatRemoteService;
 
     public void initialize() {
         if (playerType != PlayerType.Singleplayer) {
@@ -55,6 +63,41 @@ public class GameController {
                 networkManager.startServer(gameEngine);
             }
         }
+
+        try {
+            Registry registry = LocateRegistry.getRegistry(RmiServer.HOSTNAME, RmiServer.RMI_PORT);
+            chatRemoteService = (ChatRemoteService) registry.lookup(ChatRemoteService.REMOTE_OBJECT_NAME);
+        } catch (RemoteException | NotBoundException e) {
+            log.error("RMI error", e);
+        }
+
+        Timeline chatMessagesRefreshTimeLine = getChatRefreshTimeline();
+        chatMessagesRefreshTimeLine.play();
+    }
+
+    private Timeline getChatRefreshTimeline() {
+        Timeline chatMessagesRefreshTimeLine = new Timeline(new KeyFrame(Duration.ZERO, e -> {
+            try {
+                List<String> chatMessages =  chatRemoteService.getAllMessages();
+
+                StringBuilder textMessagesBuilder = new StringBuilder();
+
+                for(String message : chatMessages) {
+                    textMessagesBuilder.append(message).append("\n");
+                }
+
+                taChat.setText(textMessagesBuilder.toString());
+
+            } catch (RemoteException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        ),
+                new KeyFrame(Duration.seconds(1))
+        );
+        chatMessagesRefreshTimeLine.setCycleCount(Animation.INDEFINITE);
+        return chatMessagesRefreshTimeLine;
     }
 
     public void startNewGame() {
@@ -154,7 +197,7 @@ public class GameController {
         gameEngine = new GameEngine(loaded);
     }
 
-    public void generateDocumentation(ActionEvent actionEvent) {
+    public void generateDocumentation() {
         try {
             DocumentationUtils.generateDocumentationHtmlFile();
             DialogUtils.showDialog("Success",
@@ -166,6 +209,15 @@ public class GameController {
                     "Something went wrong while generating HTML docs.",
                     Alert.AlertType.ERROR);
             log.error("Documentation file failed to generate.", e);
+        }
+    }
+
+    public void sendChatMessage() {
+        String chatMessage = tfChat.getText();
+        try {
+            chatRemoteService.sendChatMessage(playerType + ": " + chatMessage);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
         }
     }
 }
