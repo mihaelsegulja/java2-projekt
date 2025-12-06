@@ -17,12 +17,17 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Random;
 
 public class GameUtils {
     private static final String SAVE_PATH = "game/save.dat";
 
     public static void saveGame(GameState state) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_PATH))) {
+            Path path = Path.of(SAVE_PATH);
+            Files.createDirectories(path.getParent());
             oos.writeObject(state);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save game", e);
@@ -30,6 +35,11 @@ public class GameUtils {
     }
 
     public static GameState loadGame() {
+        File file = new File(SAVE_PATH);
+        if (!file.exists()) {
+            throw new RuntimeException("Save file not found at: " + SAVE_PATH);
+        }
+
         GameState gameState;
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(SAVE_PATH))) {
             gameState = (GameState) ois.readObject();
@@ -196,5 +206,10 @@ public class GameUtils {
             case Wild -> "W";
             case Wild_Draw_Four -> "+4";
         };
+    }
+
+    public static Color generateRandomColor() {
+        Random random = new Random();
+        return Color.values()[random.nextInt(Color.values().length)];
     }
 }

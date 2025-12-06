@@ -58,11 +58,6 @@ public class GameController {
     }
 
     public void startNewGame() {
-        if (gameInitialized) {
-            lbStatus.setText("Game already initialized by another player.");
-            return;
-        }
-
         if (playerType == PlayerType.Player_1) {
             gameEngine.startNewGame(List.of("Player 1", "Player 2"));
             networkManager.sendGameState(gameEngine.getGameState());
@@ -79,6 +74,9 @@ public class GameController {
         hbOpponentHand.getChildren().clear();
         spDrawPile.getChildren().clear();
         spDiscardPile.getChildren().clear();
+
+        String currPlayer = state.getCurrentPlayer().getName();
+        lbStatus.setText(currPlayer + "'s turn");
 
         // Player hand (face-up)
         for (Card card : state.getPlayers().get(localPlayerIndex).getHand()) {
@@ -124,10 +122,6 @@ public class GameController {
     private void handleCardClick(Card card) {
         GameState gameState = gameEngine.getGameState();
         Player current = gameState.getPlayers().get(localPlayerIndex);
-        if (gameState.getCurrentPlayerIndex() != localPlayerIndex) {
-            lbStatus.setText("Wait for your turn...");
-            return;
-        }
         if (card.getColor() == Color.Wild) {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);

@@ -1,6 +1,7 @@
 package hr.algebra.uno.engine;
 
 import hr.algebra.uno.model.*;
+import hr.algebra.uno.util.GameUtils;
 
 import java.util.List;
 import java.util.Random;
@@ -31,22 +32,18 @@ public class GameEngine {
             p.addCards(dealt);
         }
 
-        // pick a valid starting discard (not wild draw four)
-        Card first;
-        do {
-            if (deck.getDrawPile().isEmpty()) {
-                deck.reshuffleFromDiscardPile();
-            }
+        if (deck.getDrawPile().isEmpty()) {
+            deck.reshuffleFromDiscardPile();
+        }
 
-            first = deck.drawCard();
+        // pick a starting discardCard
+        Card first = deck.drawCard();
 
-            if (first.getValue() == Value.Wild_Draw_Four) {
-                deck.returnToBottom(first);
-                first = null; // force another draw
-            }
-        } while (first == null);
+        if (first.getValue() == Value.Wild_Draw_Four || first.getValue() == Value.Wild) {
+            first.setWildColor(GameUtils.generateRandomColor());
+        }
 
-        deck.discard(first);
+        deck.discardCard(first);
 
         // create game state and set defaults
         GameState state = new GameState();
@@ -67,7 +64,7 @@ public class GameEngine {
 
         player.removeCard(card);
 
-        gameState.getDeck().discard(card);
+        gameState.getDeck().discardCard(card);
 
         applyCardEffect(card);
 
@@ -86,7 +83,7 @@ public class GameEngine {
         card.setWildColor(chosenColor);
 
         player.removeCard(card);
-        gameState.getDeck().discard(card);
+        gameState.getDeck().discardCard(card);
 
         applyCardEffect(card);
 
@@ -102,7 +99,7 @@ public class GameEngine {
     public void drawCard(Player player) {
         Card drawn = gameState.getDeck().drawCard();
 
-        // if deck runs out, reshuffle discard pile except top
+        // if deck runs out, reshuffle discardCard pile except top
         if (drawn == null) {
             gameState.getDeck().reshuffleFromDiscardPile();
             drawn = gameState.getDeck().drawCard();
@@ -131,7 +128,10 @@ public class GameEngine {
     public void applyCardEffect(Card card) {
         switch (card.getValue()) {
             case Skip -> nextTurn();
-            case Reverse -> gameState.setClockwise(!gameState.isClockwise());
+            case Reverse -> {
+                gameState.setClockwise(!gameState.isClockwise());
+                nextTurn();
+            }
             case Draw_Two -> {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(2));

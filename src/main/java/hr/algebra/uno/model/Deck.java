@@ -35,7 +35,7 @@ public class Deck implements java.io.Serializable {
         drawPile.insertElementAt(card, 0);
     }
 
-    public void discard(Card card) {
+    public void discardCard(Card card) {
         discardPile.push(card);
     }
 
@@ -76,11 +76,9 @@ public class Deck implements java.io.Serializable {
     }
 
     public void reshuffleFromDiscardPile() {
-        if (discardPile.size() <= 1) {
-            return;
-        }
+        if (discardPile.size() <= 1) return;
 
-        Card top = discardPile.pop(); // Keep the top discard
+        Card top = discardPile.pop(); // Keep the top discardCard
         List<Card> toReshuffle = new ArrayList<>(discardPile);
         discardPile.clear();
 

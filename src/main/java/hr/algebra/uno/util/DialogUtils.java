@@ -29,19 +29,19 @@ public class DialogUtils {
         dialog.getDialogPane().applyCss();
 
         dialog.getDialogPane().lookupButton(red).setStyle(
-                "-fx-background-color: #e63946; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
+                "-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
         );
 
         dialog.getDialogPane().lookupButton(yellow).setStyle(
-                "-fx-background-color: #f1fa8c; -fx-text-fill: black; -fx-font-size: 16px; -fx-padding: 10px;"
+                "-fx-background-color: yellow; -fx-text-fill: black; -fx-font-size: 16px; -fx-padding: 10px;"
         );
 
         dialog.getDialogPane().lookupButton(green).setStyle(
-                "-fx-background-color: #2a9d8f; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
+                "-fx-background-color: green; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
         );
 
         dialog.getDialogPane().lookupButton(blue).setStyle(
-                "-fx-background-color: #457b9d; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
+                "-fx-background-color: blue; -fx-text-fill: white; -fx-font-size: 16px; -fx-padding: 10px;"
         );
 
         ButtonType result = dialog.showAndWait().orElse(null);
