@@ -9,7 +9,7 @@ public class ChatRemoteServiceImpl implements ChatRemoteService {
     private List<String> chatMessages;
 
     public ChatRemoteServiceImpl() {
-        chatMessages = new ArrayList<String>();
+        chatMessages = new ArrayList<>();
     }
 
     @Override

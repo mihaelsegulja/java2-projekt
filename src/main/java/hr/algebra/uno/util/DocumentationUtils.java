@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DocumentationUtils {
@@ -26,7 +29,6 @@ public class DocumentationUtils {
                     .toList();
 
             String htmlString = generateDocumentationCode(classList);
-            // Files.writeString(Path.of(HTML_DOCUMENTATION_FILE_NAME), htmlString);
             Path path = Path.of(HTML_DOCUMENTATION_FILE_NAME);
             Files.createDirectories(path.getParent());
             Files.writeString(path, htmlString);
@@ -34,71 +36,137 @@ public class DocumentationUtils {
     }
 
     private static String generateDocumentationCode(List<String> classList) {
-        StringBuilder htmlBuilder = new StringBuilder();
+        StringBuilder html = new StringBuilder();
 
-        String htmlStart = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                <title>Java documentation</title>
-                </head>
-                <body>
-                <h1>List of classes:</h1>""";
+        html.append("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>UNO Game Docs</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; background: #fafafa; }
+                h1 { color: #900; border-bottom: 2px solid #ccc; padding-bottom: 4px; }
+                h2 { color: #333; margin-top: 25px; }
+                .class-block { margin-bottom: 40px; padding: 10px 15px; background: #fff; }
+                code { background: #eee; padding: 2px 4px; }
+                summary { cursor: pointer; font-weight: bold; margin: 5px 0; }
+                .sig { margin: 3px 0 3px 15px; font-family: Consolas, monospace; }
+            </style>
+        </head>
+        <body>
+        <h1>UNO Game - Reflection Docs</h1>
+        <p>Auto-generated using Java Reflection API</p>
+    """);
 
-        htmlBuilder.append(htmlStart);
-
-        for (String className : classList) {
-            className = className
-                    .substring(PATH_WITH_CLASSES.length(), className.length() - CLASS_FILE_NAME_EXTENSION.length())
+        for (String fullPath : classList) {
+            String className = fullPath
+                    .substring(PATH_WITH_CLASSES.length(), fullPath.length() - CLASS_FILE_NAME_EXTENSION.length())
                     .replace("\\", ".")
                     .replace("/", ".");
 
             try {
                 Class<?> clazz = Class.forName(className);
-                htmlBuilder
-                        .append("<h1>Class: ")
-                        .append(className)
-                        .append("</h1><br/>");
+                String simpleName = clazz.getSimpleName();
+                String packageName = clazz.getPackageName();
 
-                Constructor<?>[] constructors = clazz.getConstructors();
-                if (constructors.length > 0) {
-                    htmlBuilder.append("<h2>List of constructors: </h2><br/>");
-                    for (Constructor<?> constructor : constructors) {
-                        htmlBuilder.append("<h3>Constructor: ").append(constructor).append("</h3><br />");
-                    }
-                } else {
-                    htmlBuilder.append("<h2>No constructor</h2><br />");
+                html.append("<div class='class-block'>");
+                html.append("<h1 id='").append(simpleName).append("'>").append(simpleName).append("</h1>");
+
+                // Package
+                html.append("<p><strong>Package:</strong> ").append(packageName).append("</p>");
+
+                // Superclass
+                Class<?> superClass = clazz.getSuperclass();
+                if (superClass != null && superClass != Object.class) {
+                    html.append("<p><strong>Extends:</strong> ").append(superClass.getSimpleName()).append("</p>");
                 }
 
-                Field[] declaredFields = clazz.getDeclaredFields();
-                if (declaredFields.length > 0) {
-                    htmlBuilder.append("<h2>List of declared fields: </h2><br/>");
-                    for (Field field : declaredFields) {
-                        htmlBuilder.append("<h3>Field: ").append(field).append("</h3><br />");
-                    }
-                } else {
-                    htmlBuilder.append("<h2>No fields</h2><br />");
+                // Interfaces
+                Class<?>[] interfaces = clazz.getInterfaces();
+                if (interfaces.length > 0) {
+                    html.append("<p><strong>Implements:</strong> ");
+                    html.append(
+                            Arrays.stream(interfaces)
+                                    .map(Class::getSimpleName)
+                                    .collect(Collectors.joining(", "))
+                    );
+                    html.append("</p>");
                 }
 
-                Method[] declaredMethods = clazz.getDeclaredMethods();
-                if (declaredMethods.length > 0) {
-                    htmlBuilder.append("<h2>List of declared methods: </h2><br/>");
-                    for (Method method : declaredMethods) {
-                        htmlBuilder.append("<h3>Method: ").append(method).append("</h3><br />");
-                    }
+                // Constructors
+                Constructor<?>[] ctors = clazz.getDeclaredConstructors();
+                html.append("<details><summary>Constructors</summary>");
+                if (ctors.length == 0) {
+                    html.append("<p class='sig'>No public constructors</p>");
                 } else {
-                    htmlBuilder.append("<h2>No methods</h2><br />");
+                    for (Constructor<?> ctor : ctors) {
+                        String mods = Modifier.toString(ctor.getModifiers());
+                        String params = Arrays.stream(ctor.getParameterTypes())
+                                .map(Class::getSimpleName)
+                                .collect(Collectors.joining(", "));
+                        html.append("<p class='sig'>")
+                                .append(mods).append(" ")
+                                .append(simpleName)
+                                .append("(").append(params).append(")")
+                                .append("</p>");
+                    }
                 }
+                html.append("</details>");
+
+                // Fields
+                Field[] fields = clazz.getDeclaredFields();
+                html.append("<details><summary>Fields</summary>");
+                if (fields.length == 0) {
+                    html.append("<p class='sig'>No declared fields</p>");
+                } else {
+                    for (Field field : fields) {
+                        String mods = Modifier.toString(field.getModifiers());
+                        String type = field.getType().getSimpleName();
+                        String name = field.getName();
+                        html.append("<p class='sig'>")
+                                .append(mods).append(" ")
+                                .append(type).append(" ")
+                                .append(name)
+                                .append("</p>");
+                    }
+                }
+                html.append("</details>");
+
+                // Methods
+                Method[] methods = clazz.getDeclaredMethods();
+                html.append("<details><summary>Methods</summary>");
+                if (methods.length == 0) {
+                    html.append("<p class='sig'>No declared methods</p>");
+                } else {
+                    for (Method method : methods) {
+                        String mods = Modifier.toString(method.getModifiers());
+                        String returnType = method.getReturnType().getSimpleName();
+                        String name = method.getName();
+                        String params = Arrays.stream(method.getParameterTypes())
+                                .map(Class::getSimpleName)
+                                .collect(Collectors.joining(", "));
+                        html.append("<p class='sig'>")
+                                .append(mods).append(" ")
+                                .append(returnType).append(" ")
+                                .append(name)
+                                .append("(").append(params).append(")")
+                                .append("</p>");
+                    }
+                }
+                html.append("</details>");
+
+                html.append("</div>");
+
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        String htmlEnd = """
-                </body>
-                </html>""";
-        htmlBuilder.append(htmlEnd);
+        html.append("""
+        </body>
+        </html>
+    """);
 
-        return htmlBuilder.toString();
+        return html.toString();
     }
 }

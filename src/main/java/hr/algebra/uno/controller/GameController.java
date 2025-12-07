@@ -1,6 +1,8 @@
 package hr.algebra.uno.controller;
 
 import hr.algebra.uno.engine.GameEngine;
+import hr.algebra.uno.jndi.ConfigurationKey;
+import hr.algebra.uno.jndi.ConfigurationReader;
 import hr.algebra.uno.model.*;
 import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
@@ -12,11 +14,12 @@ import hr.algebra.uno.util.GameUtils;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
@@ -41,12 +44,13 @@ public class GameController {
     @FXML private StackPane spDrawPile;
     @FXML private StackPane spDiscardPile;
     @FXML private Label lbStatus;
+    @FXML private Button btnUno;
 
     private static final Logger log = LoggerFactory.getLogger(GameController.class);
     private GameEngine gameEngine = new GameEngine();
     private NetworkManager networkManager;
-    private static final int Player_1_Port = 9001;
-    private static final int Player_2_Port = 9002;
+    private static final int PLAYER_1_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_1_SERVER_PORT);
+    private static final int PLAYER_2_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_2_SERVER_PORT);
     private int localPlayerIndex;
     public static boolean gameInitialized = false;
     ChatRemoteService chatRemoteService;
@@ -55,11 +59,11 @@ public class GameController {
         if (playerType != PlayerType.Singleplayer) {
             if (playerType == PlayerType.Player_1) {
                 localPlayerIndex = playerType.getIndex();
-                networkManager = new NetworkManager(playerType, Player_1_Port, Player_2_Port, this);
+                networkManager = new NetworkManager(playerType, PLAYER_1_PORT, PLAYER_2_PORT, this);
                 networkManager.startServer(gameEngine);
             } else if (playerType == PlayerType.Player_2) {
                 localPlayerIndex = playerType.getIndex();
-                networkManager = new NetworkManager(playerType, Player_2_Port, Player_1_Port, this);
+                networkManager = new NetworkManager(playerType, PLAYER_2_PORT, PLAYER_1_PORT, this);
                 networkManager.startServer(gameEngine);
             }
         }
@@ -76,26 +80,23 @@ public class GameController {
     }
 
     private Timeline getChatRefreshTimeline() {
-        Timeline chatMessagesRefreshTimeLine = new Timeline(new KeyFrame(Duration.ZERO, e -> {
-            try {
-                List<String> chatMessages =  chatRemoteService.getAllMessages();
+        Timeline chatMessagesRefreshTimeLine = new Timeline(
+            new KeyFrame(Duration.ZERO, e -> {
+                try {
+                    List<String> chatMessages = chatRemoteService.getAllMessages();
 
-                StringBuilder textMessagesBuilder = new StringBuilder();
+                    StringBuilder textMessagesBuilder = new StringBuilder();
 
-                for(String message : chatMessages) {
-                    textMessagesBuilder.append(message).append("\n");
+                    for(String message : chatMessages) {
+                        textMessagesBuilder.append(message).append("\n");
+                    }
+
+                    taChat.setText(textMessagesBuilder.toString());
+
+                } catch (RemoteException ex) {
+                    throw new RuntimeException(ex);
                 }
-
-                taChat.setText(textMessagesBuilder.toString());
-
-            } catch (RemoteException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        ),
-                new KeyFrame(Duration.seconds(1))
-        );
+            }), new KeyFrame(Duration.seconds(1)));
         chatMessagesRefreshTimeLine.setCycleCount(Animation.INDEFINITE);
         return chatMessagesRefreshTimeLine;
     }
@@ -121,7 +122,6 @@ public class GameController {
         String currPlayer = state.getCurrentPlayer().getName();
         lbStatus.setText(currPlayer + "'s turn");
 
-        // Player hand (face-up)
         for (Card card : state.getPlayers().get(localPlayerIndex).getHand()) {
             Node cardNode = GameUtils.createCardNode(card, true);
 
@@ -136,19 +136,16 @@ public class GameController {
             hbPlayerHand.getChildren().add(cardNode);
         }
 
-        // Opponent hand (back only)
         int opponentCardCount = state.getPlayers().get(opponentPlayerIndex()).getHand().size();
         for (int i = 0; i < opponentCardCount; i++) {
             hbOpponentHand.getChildren().add(GameUtils.createCardNode(null, false));
         }
 
-        // Discard pile
         Card topDiscard = state.getDeck().peekTopCard();
         if (topDiscard != null) {
             spDiscardPile.getChildren().add(GameUtils.createCardNode(topDiscard, true));
         }
 
-        // Draw pile
         Node drawPileNode = GameUtils.createCardNode(null, false);
 
         if (state.getCurrentPlayerIndex() == localPlayerIndex) {
@@ -169,7 +166,7 @@ public class GameController {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);
         } else {
-            gameEngine.playCard(current, card);
+            gameEngine.playCard(current, card, null);
         }
         renderGameState();
         networkManager.sendGameState(gameEngine.getGameState());
@@ -195,6 +192,9 @@ public class GameController {
     public void loadGame() {
         GameState loaded = GameUtils.loadGame();
         gameEngine = new GameEngine(loaded);
+        localPlayerIndex = playerType.getIndex();
+        gameInitialized = true;
+        renderGameState();
     }
 
     public void generateDocumentation() {
@@ -214,10 +214,23 @@ public class GameController {
 
     public void sendChatMessage() {
         String chatMessage = tfChat.getText();
+        if(chatMessage.isBlank()) return;
+        tfChat.clear();
         try {
             chatRemoteService.sendChatMessage(playerType + ": " + chatMessage);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void handleKeyPress(KeyEvent keyEvent) {
+        if (keyEvent.getCode() == KeyCode.ENTER) {
+            sendChatMessage();
+            keyEvent.consume();
+        }
+    }
+
+    public void handleUnoClick() {
+
     }
 }

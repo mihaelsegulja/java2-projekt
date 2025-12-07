@@ -1,6 +1,7 @@
 package hr.algebra.uno.rmi;
 
-import hr.algebra.uno.network.NetworkManager;
+import hr.algebra.uno.jndi.ConfigurationKey;
+import hr.algebra.uno.jndi.ConfigurationReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +13,8 @@ import java.rmi.server.UnicastRemoteObject;
 public class RmiServer {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
     private static final int RANDOM_PORT_HINT = 0;
-    public static final int RMI_PORT = 1099;
-    public static final String HOSTNAME = "localhost";
+    public static final int RMI_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.RMI_SERVER_PORT);
+    public static final String HOSTNAME = ConfigurationReader.getStringValueForKey(ConfigurationKey.HOSTNAME);
 
     public static void main(String[] args) {
         try {
@@ -22,7 +23,7 @@ public class RmiServer {
             ChatRemoteService skeleton = (ChatRemoteService) UnicastRemoteObject.exportObject(chatRemoteService,
                     RANDOM_PORT_HINT);
             registry.rebind(ChatRemoteService.REMOTE_OBJECT_NAME, skeleton);
-            System.err.println("Object registered in RMI registry");
+            log.info("Object registered in RMI registry");
         } catch (RemoteException e) {
             log.error("Documentation file failed to generate.", e);
         }

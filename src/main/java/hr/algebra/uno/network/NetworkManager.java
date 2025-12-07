@@ -2,6 +2,8 @@ package hr.algebra.uno.network;
 
 import hr.algebra.uno.controller.GameController;
 import hr.algebra.uno.engine.GameEngine;
+import hr.algebra.uno.jndi.ConfigurationKey;
+import hr.algebra.uno.jndi.ConfigurationReader;
 import hr.algebra.uno.model.GameState;
 import hr.algebra.uno.model.PlayerType;
 import javafx.application.Platform;
@@ -19,7 +21,7 @@ public class NetworkManager {
     private final PlayerType playerType;
     private final int listenPort;
     private final int targetPort;
-    private static final String host = "localhost";
+    private static final String host = ConfigurationReader.getStringValueForKey(ConfigurationKey.HOSTNAME);
     private GameController gameController;
 
     public NetworkManager(PlayerType playerType, int listenPort, int targetPort, GameController gameController) {

@@ -2,25 +2,20 @@ package hr.algebra.uno.engine;
 
 import hr.algebra.uno.model.*;
 import hr.algebra.uno.util.GameUtils;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Random;
 
+@NoArgsConstructor
 public class GameEngine {
+    @Getter @Setter
     private GameState gameState;
-
-    public GameEngine() { }
 
     public GameEngine(GameState state) {
         this.gameState = state;
-    }
-
-    public GameState getGameState() {
-        return gameState;
-    }
-
-    public void setGameState(GameState gameState) {
-        this.gameState = gameState;
     }
 
     public void startNewGame(List<String> playerNames) {
@@ -56,31 +51,12 @@ public class GameEngine {
         this.gameState = state;
     }
 
-    public void playCard(Player player, Card card) {
-        Card topCard = gameState.getDeck().peekTopCard();
-        if (!isValidMove(card, topCard)) {
-            return;
-        }
-
-        player.removeCard(card);
-
-        gameState.getDeck().discardCard(card);
-
-        applyCardEffect(card);
-
-        if (player.getHand().isEmpty()) {
-            gameState.setGameOver(true);
-            return;
-        }
-
-        nextTurn();
-    }
-
     public void playCard(Player player, Card card, Color chosenColor) {
         Card topCard = gameState.getDeck().peekTopCard();
         if (!isValidMove(card, topCard)) return;
 
-        card.setWildColor(chosenColor);
+        if (chosenColor != null)
+            card.setWildColor(chosenColor);
 
         player.removeCard(card);
         gameState.getDeck().discardCard(card);
@@ -94,7 +70,6 @@ public class GameEngine {
 
         nextTurn();
     }
-
 
     public void drawCard(Player player) {
         Card drawn = gameState.getDeck().drawCard();
@@ -135,12 +110,10 @@ public class GameEngine {
             case Draw_Two -> {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(2));
-                nextTurn();
             }
             case Wild_Draw_Four -> {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(4));
-                nextTurn();
             }
             default -> { }
         }
