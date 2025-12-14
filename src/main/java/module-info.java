@@ -7,6 +7,7 @@ module hr.algebra.uno {
     requires org.slf4j;
     requires java.rmi;
     requires javafx.base;
+    requires java.naming;
 
     exports hr.algebra.uno;
     exports hr.algebra.uno.rmi;

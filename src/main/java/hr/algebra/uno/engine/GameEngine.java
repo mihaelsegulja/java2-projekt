@@ -18,9 +18,8 @@ public class GameEngine {
         this.gameState = state;
     }
 
-    public void startNewGame(List<String> playerNames) {
+    public void startNewGame(List<Player> players) {
         Deck deck = createStandardDeck();
-        List<Player> players = playerNames.stream().map(Player::new).toList();
 
         for (Player p : players) {
             List<Card> dealt = deck.drawCards(7);
@@ -31,7 +30,6 @@ public class GameEngine {
             deck.reshuffleFromDiscardPile();
         }
 
-        // pick a starting discardCard
         Card first = deck.drawCard();
 
         if (first.getValue() == Value.Wild_Draw_Four || first.getValue() == Value.Wild) {
@@ -40,7 +38,6 @@ public class GameEngine {
 
         deck.discardCard(first);
 
-        // create game state and set defaults
         GameState state = new GameState();
         state.setPlayers(players);
         state.setDeck(deck);
@@ -55,16 +52,25 @@ public class GameEngine {
         Card topCard = gameState.getDeck().peekTopCard();
         if (!isValidMove(card, topCard)) return;
 
-        if (chosenColor != null)
+        if (chosenColor != null) {
             card.setWildColor(chosenColor);
+        }
 
         player.removeCard(card);
         gameState.getDeck().discardCard(card);
+
+        if (player.getHand().size() == 1) {
+            player.setMustCallUno(true);
+            player.setUnoCalled(false);
+        } else {
+            player.resetUno();
+        }
 
         applyCardEffect(card);
 
         if (player.getHand().isEmpty()) {
             gameState.setGameOver(true);
+            gameState.setWinnerName(player.getName());
             return;
         }
 
@@ -73,14 +79,10 @@ public class GameEngine {
 
     public void drawCard(Player player) {
         Card drawn = gameState.getDeck().drawCard();
-
-        // if deck runs out, reshuffle discardCard pile except top
-        if (drawn == null) {
-            gameState.getDeck().reshuffleFromDiscardPile();
-            drawn = gameState.getDeck().drawCard();
+        if (drawn != null){
+            player.addCard(drawn);
+            player.resetUno();
         }
-
-        player.addCard(drawn);
     }
 
     public void nextTurn() {
@@ -115,7 +117,7 @@ public class GameEngine {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(4));
             }
-            default -> { }
+            default -> {}
         }
     }
 
@@ -134,5 +136,11 @@ public class GameEngine {
         Deck deck = new Deck();
         deck.initializeStandardUnoDeck();
         return deck;
+    }
+
+    public void callUno(Player player) {
+        if (player.isMustCallUno() && !player.isUnoCalled()) {
+            player.setUnoCalled(true);
+        }
     }
 }

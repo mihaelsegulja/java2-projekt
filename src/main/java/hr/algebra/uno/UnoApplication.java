@@ -44,6 +44,7 @@ public class UnoApplication extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(UnoApplication.class.getResource("game-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Uno - " + playerType);
+        stage.setResizable(true);
         stage.setScene(scene);
         stage.show();
     }

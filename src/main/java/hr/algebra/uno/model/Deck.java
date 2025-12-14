@@ -2,12 +2,13 @@ package hr.algebra.uno.model;
 
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
-public class Deck implements java.io.Serializable {
+public class Deck implements Serializable {
     @Getter
     private final Stack<Card> drawPile = new Stack<>();
     @Getter
@@ -18,15 +19,18 @@ public class Deck implements java.io.Serializable {
     }
 
     public Card drawCard() {
+        if (drawPile.isEmpty()) {
+            reshuffleFromDiscardPile();
+        }
         return drawPile.isEmpty() ? null : drawPile.pop();
     }
 
     public List<Card> drawCards(int n) {
         List<Card> cards = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
-            Card c = drawCard();
-            if (c == null) break;
-            cards.add(c);
+            Card card = drawCard();
+            if (card == null) break;
+            cards.add(card);
         }
         return cards;
     }
@@ -78,15 +82,12 @@ public class Deck implements java.io.Serializable {
     public void reshuffleFromDiscardPile() {
         if (discardPile.size() <= 1) return;
 
-        Card top = discardPile.pop(); // Keep the top discardCard
-        List<Card> toReshuffle = new ArrayList<>(discardPile);
+        Card top = discardPile.pop();
+        drawPile.addAll(discardPile);
         discardPile.clear();
-
-        // Put top card back
         discardPile.push(top);
 
-        Collections.shuffle(toReshuffle);
-        drawPile.addAll(toReshuffle);
+        Collections.shuffle(drawPile);
     }
 
     public void reset() {

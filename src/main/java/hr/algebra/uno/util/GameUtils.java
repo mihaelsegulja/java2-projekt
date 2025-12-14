@@ -15,6 +15,8 @@ import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,7 +24,10 @@ import java.nio.file.Path;
 import java.util.Random;
 
 public class GameUtils {
+    private static final Logger log = LoggerFactory.getLogger(GameUtils.class);
     private static final String SAVE_PATH = "game/save.dat";
+
+    private GameUtils() {}
 
     public static void saveGame(GameState state) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_PATH))) {
@@ -30,7 +35,7 @@ public class GameUtils {
             Files.createDirectories(path.getParent());
             oos.writeObject(state);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save game", e);
+            log.error("Error while saving game", e);
         }
     }
 
@@ -69,7 +74,7 @@ public class GameUtils {
             innerRect.setArcHeight(8);
             innerRect.setFill(GameUtils.getColorForCard(card.getColor()));
 
-            String cardText = GameUtils.getCardDisplayText(card.getValue());
+            String cardText = GameUtils.getCardDisplayText(card.getValue(), false);
 
             DropShadow textShadow = new DropShadow();
             textShadow.setRadius(1.0);
@@ -90,7 +95,7 @@ public class GameUtils {
 
             cardPane.getChildren().addAll(rect, innerRect, centerLabel);
 
-            String cornerText = GameUtils.getCardCornerText(card.getValue());
+            String cornerText = GameUtils.getCardDisplayText(card.getValue(), true);
 
             Label cornerLabelTL = new Label(cornerText);
             cornerLabelTL.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
@@ -168,7 +173,7 @@ public class GameUtils {
         };
     }
 
-    public static String getCardDisplayText(Value value) {
+    public static String getCardDisplayText(Value value, boolean isCornerText) {
         return switch (value) {
             case Zero -> "0";
             case One -> "1";
@@ -180,36 +185,15 @@ public class GameUtils {
             case Seven -> "7";
             case Eight -> "8";
             case Nine -> "9";
-            case Skip -> "SKIP";
-            case Reverse -> "REV";
+            case Skip -> isCornerText ? "S" : "SKIP";
+            case Reverse -> isCornerText ? "R" : "REV";
             case Draw_Two -> "+2";
-            case Wild -> "WILD";
-            case Wild_Draw_Four -> "W+4";
-        };
-    }
-
-    public static String getCardCornerText(Value value) {
-        return switch (value) {
-            case Zero -> "0";
-            case One -> "1";
-            case Two -> "2";
-            case Three -> "3";
-            case Four -> "4";
-            case Five -> "5";
-            case Six -> "6";
-            case Seven -> "7";
-            case Eight -> "8";
-            case Nine -> "9";
-            case Skip -> "S";
-            case Reverse -> "R";
-            case Draw_Two -> "+2";
-            case Wild -> "W";
-            case Wild_Draw_Four -> "+4";
+            case Wild -> isCornerText ? "W" : "WILD";
+            case Wild_Draw_Four -> isCornerText ? "+4" : "W+4";
         };
     }
 
     public static Color generateRandomColor() {
-        Random random = new Random();
-        return Color.values()[random.nextInt(Color.values().length)];
+        return Color.values()[new Random().nextInt(Color.values().length)];
     }
 }

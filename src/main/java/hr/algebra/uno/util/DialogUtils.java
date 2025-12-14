@@ -5,12 +5,22 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
 public class DialogUtils {
+    private DialogUtils() {}
+
     public static void showDialog(String title, String content, Alert.AlertType alertType) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public static void showWinnerDialog(String winnerName) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText("We have a winner!");
+        alert.setContentText(winnerName + " has won the game.");
+        alert.show();
     }
 
     public static Color showColorPickerDialog() {
@@ -25,7 +35,6 @@ public class DialogUtils {
 
         dialog.getButtonTypes().setAll(red, yellow, green, blue);
 
-        //TODO: move to a css file
         dialog.getDialogPane().applyCss();
 
         dialog.getDialogPane().lookupButton(red).setStyle(

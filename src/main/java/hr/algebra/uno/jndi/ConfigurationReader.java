@@ -1,20 +1,28 @@
 package hr.algebra.uno.jndi;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Hashtable;
 import java.util.Properties;
 
 public class ConfigurationReader {
-    private static final Properties properties;
+
+    private static Properties properties;
+
     static {
         properties = new Properties();
-        try (InputStream is = ConfigurationReader.class.getResourceAsStream("/hr/algebra/uno/app.conf")) {
-            if (is == null) {
-                throw new RuntimeException("Cannot find app.conf in classpath");
-            }
-            properties.load(is);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load configuration", e);
+        Hashtable<String, String> configuration = new Hashtable<>();
+        configuration.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.fscontext.RefFSContextFactory");
+        configuration.put(Context.PROVIDER_URL, "file:src/main/resources/hr/algebra/uno");
+
+        try(InitialDirContextCloseable context = new InitialDirContextCloseable(configuration)) {
+            Object configurationObject = context.lookup("app.conf");
+            properties.load(new FileReader(configurationObject.toString()));
+        }
+        catch (NamingException | IOException e) {
+            e.printStackTrace();
         }
     }
 

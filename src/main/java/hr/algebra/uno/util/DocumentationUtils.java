@@ -1,5 +1,8 @@
 package hr.algebra.uno.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -14,9 +17,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DocumentationUtils {
+    private static final Logger log = LoggerFactory.getLogger(DocumentationUtils.class);
     private static final String PATH_WITH_CLASSES = "target/classes/";
     private static final String CLASS_FILE_NAME_EXTENSION = ".class";
     private static final String HTML_DOCUMENTATION_FILE_NAME = "doc/documentation.html";
+
+    private DocumentationUtils() {}
 
     public static void generateDocumentationHtmlFile() throws IOException {
         Path start = Paths.get(PATH_WITH_CLASSES);
@@ -158,7 +164,7 @@ public class DocumentationUtils {
                 html.append("</div>");
 
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                log.error("Error while generating docs", e);
             }
         }
 

@@ -1,16 +1,25 @@
 package hr.algebra.uno.model;
 
 import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class Player implements java.io.Serializable {
+public class Player implements Serializable {
+    private final String id;
     private final String name;
     private final List<Card> hand = new ArrayList<>();
 
-    public Player(String name) {
+    @Setter
+    private boolean mustCallUno;
+    @Setter
+    private boolean unoCalled;
+
+    public Player(String id, String name) {
+        this.id = id;
         this.name = name;
     }
 
@@ -30,5 +39,10 @@ public class Player implements java.io.Serializable {
 
     public void removeCard(int index) {
         hand.remove(index);
+    }
+
+    public void resetUno() {
+        mustCallUno = false;
+        unoCalled = false;
     }
 }

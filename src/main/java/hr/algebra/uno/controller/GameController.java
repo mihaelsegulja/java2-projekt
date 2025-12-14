@@ -4,15 +4,12 @@ import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.jndi.ConfigurationKey;
 import hr.algebra.uno.jndi.ConfigurationReader;
 import hr.algebra.uno.model.*;
-import hr.algebra.uno.model.Color;
 import hr.algebra.uno.network.NetworkManager;
 import hr.algebra.uno.rmi.ChatRemoteService;
-import hr.algebra.uno.rmi.RmiServer;
+import hr.algebra.uno.util.ChatUtils;
 import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
 import hr.algebra.uno.util.GameUtils;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
@@ -22,16 +19,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.List;
+import java.util.Optional;
 
 import static hr.algebra.uno.UnoApplication.playerType;
 
@@ -51,59 +44,32 @@ public class GameController {
     private NetworkManager networkManager;
     private static final int PLAYER_1_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_1_SERVER_PORT);
     private static final int PLAYER_2_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_2_SERVER_PORT);
-    private int localPlayerIndex;
     public static boolean gameInitialized = false;
     ChatRemoteService chatRemoteService;
 
     public void initialize() {
         if (playerType != PlayerType.Singleplayer) {
             if (playerType == PlayerType.Player_1) {
-                localPlayerIndex = playerType.getIndex();
                 networkManager = new NetworkManager(playerType, PLAYER_1_PORT, PLAYER_2_PORT, this);
                 networkManager.startServer(gameEngine);
             } else if (playerType == PlayerType.Player_2) {
-                localPlayerIndex = playerType.getIndex();
                 networkManager = new NetworkManager(playerType, PLAYER_2_PORT, PLAYER_1_PORT, this);
                 networkManager.startServer(gameEngine);
             }
         }
 
-        try {
-            Registry registry = LocateRegistry.getRegistry(RmiServer.HOSTNAME, RmiServer.RMI_PORT);
-            chatRemoteService = (ChatRemoteService) registry.lookup(ChatRemoteService.REMOTE_OBJECT_NAME);
-        } catch (RemoteException | NotBoundException e) {
-            log.error("RMI error", e);
-        }
+        Optional<ChatRemoteService> chatRemoteServiceOptional = ChatUtils.initializeChatRemoteService();
+        chatRemoteServiceOptional.ifPresent(remoteService -> chatRemoteService = remoteService);
 
-        Timeline chatMessagesRefreshTimeLine = getChatRefreshTimeline();
+        Timeline chatMessagesRefreshTimeLine = ChatUtils.getChatRefreshTimeline(chatRemoteService, taChat);
         chatMessagesRefreshTimeLine.play();
-    }
-
-    private Timeline getChatRefreshTimeline() {
-        Timeline chatMessagesRefreshTimeLine = new Timeline(
-            new KeyFrame(Duration.ZERO, e -> {
-                try {
-                    List<String> chatMessages = chatRemoteService.getAllMessages();
-
-                    StringBuilder textMessagesBuilder = new StringBuilder();
-
-                    for(String message : chatMessages) {
-                        textMessagesBuilder.append(message).append("\n");
-                    }
-
-                    taChat.setText(textMessagesBuilder.toString());
-
-                } catch (RemoteException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }), new KeyFrame(Duration.seconds(1)));
-        chatMessagesRefreshTimeLine.setCycleCount(Animation.INDEFINITE);
-        return chatMessagesRefreshTimeLine;
     }
 
     public void startNewGame() {
         if (playerType == PlayerType.Player_1) {
-            gameEngine.startNewGame(List.of("Player 1", "Player 2"));
+            gameEngine.startNewGame(List.of(
+                    new Player(PlayerType.Player_1.toString(), "Player 1"),
+                    new Player(PlayerType.Player_2.toString(), "Player 2")));
             networkManager.sendGameState(gameEngine.getGameState());
             renderGameState();
             gameInitialized = true;
@@ -119,13 +85,28 @@ public class GameController {
         spDrawPile.getChildren().clear();
         spDiscardPile.getChildren().clear();
 
+        if (state.isGameOver()) {
+            DialogUtils.showWinnerDialog(state.getWinnerName());
+            disableGameUI();
+            return;
+        }
+
         String currPlayer = state.getCurrentPlayer().getName();
         lbStatus.setText(currPlayer + "'s turn");
 
-        for (Card card : state.getPlayers().get(localPlayerIndex).getHand()) {
+        int localIndex = resolveLocalPlayerIndex(state);
+        Player me = state.getPlayers().get(localIndex);
+
+        log.info("Current turn: {}", state.getCurrentPlayer().getName());
+        log.info("Local player resolved as: {}", me.getName());
+
+        btnUno.setVisible(me.isMustCallUno() && !me.isUnoCalled());
+        btnUno.setDisable(!(me.isMustCallUno() && !me.isUnoCalled()));
+
+        for (Card card : me.getHand()) {
             Node cardNode = GameUtils.createCardNode(card, true);
 
-            if (state.getCurrentPlayerIndex() == localPlayerIndex) {
+            if (state.getCurrentPlayerIndex() == localIndex) {
                 cardNode.setOnMouseClicked(e -> handleCardClick(card));
                 cardNode.setCursor(Cursor.HAND);
             } else {
@@ -136,7 +117,15 @@ public class GameController {
             hbPlayerHand.getChildren().add(cardNode);
         }
 
-        int opponentCardCount = state.getPlayers().get(opponentPlayerIndex()).getHand().size();
+        int opponentIndex = -1;
+        for (int i = 0; i < state.getPlayers().size(); i++) {
+            if (i != localIndex) {
+                opponentIndex = i;
+                break;
+            }
+        }
+
+        int opponentCardCount = state.getPlayers().get(opponentIndex).getHand().size();
         for (int i = 0; i < opponentCardCount; i++) {
             hbOpponentHand.getChildren().add(GameUtils.createCardNode(null, false));
         }
@@ -148,7 +137,7 @@ public class GameController {
 
         Node drawPileNode = GameUtils.createCardNode(null, false);
 
-        if (state.getCurrentPlayerIndex() == localPlayerIndex) {
+        if (state.getCurrentPlayerIndex() == localIndex) {
             drawPileNode.setOnMouseClicked(e -> handleDrawCardClick());
             drawPileNode.setCursor(Cursor.HAND);
         } else {
@@ -159,30 +148,34 @@ public class GameController {
         spDrawPile.getChildren().add(drawPileNode);
     }
 
+    private void disableGameUI() {
+        hbPlayerHand.setDisable(true);
+        spDrawPile.setDisable(true);
+        btnUno.setDisable(true);
+    }
+
     private void handleCardClick(Card card) {
         GameState gameState = gameEngine.getGameState();
-        Player current = gameState.getPlayers().get(localPlayerIndex);
+        int localIndex = resolveLocalPlayerIndex(gameState);
+        Player current = gameState.getPlayers().get(localIndex);
         if (card.getColor() == Color.Wild) {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);
         } else {
             gameEngine.playCard(current, card, null);
         }
-        renderGameState();
         networkManager.sendGameState(gameEngine.getGameState());
+        renderGameState();
     }
 
     private void handleDrawCardClick() {
         GameState gameState = gameEngine.getGameState();
-        Player current = gameState.getPlayers().get(localPlayerIndex);
+        int localIndex = resolveLocalPlayerIndex(gameState);
+        Player current = gameState.getPlayers().get(localIndex);
         lbStatus.setText(current.getName() + "'s turn");
         gameEngine.drawCard(current);
-        renderGameState();
         networkManager.sendGameState(gameEngine.getGameState());
-    }
-
-    private int opponentPlayerIndex() {
-        return localPlayerIndex == 0 ? 1 : 0;
+        renderGameState();
     }
 
     public void saveGame() {
@@ -191,9 +184,8 @@ public class GameController {
 
     public void loadGame() {
         GameState loaded = GameUtils.loadGame();
-        gameEngine = new GameEngine(loaded);
-        localPlayerIndex = playerType.getIndex();
-        gameInitialized = true;
+        gameEngine.setGameState(loaded);
+        networkManager.sendGameState(loaded);
         renderGameState();
     }
 
@@ -213,14 +205,7 @@ public class GameController {
     }
 
     public void sendChatMessage() {
-        String chatMessage = tfChat.getText();
-        if(chatMessage.isBlank()) return;
-        tfChat.clear();
-        try {
-            chatRemoteService.sendChatMessage(playerType + ": " + chatMessage);
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
+        ChatUtils.sendChatMessage(chatRemoteService, tfChat);
     }
 
     public void handleKeyPress(KeyEvent keyEvent) {
@@ -231,6 +216,26 @@ public class GameController {
     }
 
     public void handleUnoClick() {
+        GameState gameState = gameEngine.getGameState();
+        int localIndex = resolveLocalPlayerIndex(gameState);
+        Player me = gameState.getPlayers().get(localIndex);
 
+        if (me.isMustCallUno() && !me.isUnoCalled()) {
+            gameEngine.callUno(me);
+            btnUno.setVisible(false);
+
+            if (networkManager != null) {
+                networkManager.sendGameState(gameEngine.getGameState());
+            }
+        }
+    }
+
+    private int resolveLocalPlayerIndex(GameState state) {
+        for (int i = 0; i < state.getPlayers().size(); i++) {
+            if (state.getPlayers().get(i).getId().equals(playerType.toString())) {
+                return i;
+            }
+        }
+        throw new IllegalStateException("Local player not found in GameState");
     }
 }
