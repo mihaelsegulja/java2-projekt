@@ -8,8 +8,9 @@ import java.util.Hashtable;
 import java.util.Properties;
 
 public class ConfigurationReader {
-
     private static Properties properties;
+
+    private ConfigurationReader() {}
 
     static {
         properties = new Properties();

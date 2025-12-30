@@ -145,27 +145,27 @@ public class GameUtils {
 
     public static Paint getColorForCard(Color color) {
         return switch (color) {
-            case Red -> new LinearGradient(
+            case RED -> new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.RED),
                     new Stop(1, javafx.scene.paint.Color.MAROON)
             );
-            case Green -> new LinearGradient(
+            case GREEN -> new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.LIMEGREEN),
                     new Stop(1, javafx.scene.paint.Color.FORESTGREEN)
             );
-            case Blue -> new LinearGradient(
+            case BLUE -> new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.BLUE),
                     new Stop(1, javafx.scene.paint.Color.DARKBLUE)
             );
-            case Yellow -> new LinearGradient(
+            case YELLOW -> new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.YELLOW),
                     new Stop(1, javafx.scene.paint.Color.GOLDENROD)
             );
-            case Wild -> new LinearGradient(
+            case WILD -> new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.BLACK),
                     new Stop(1, javafx.scene.paint.Color.DIMGRAY)
@@ -175,21 +175,21 @@ public class GameUtils {
 
     public static String getCardDisplayText(Value value, boolean isCornerText) {
         return switch (value) {
-            case Zero -> "0";
-            case One -> "1";
-            case Two -> "2";
-            case Three -> "3";
-            case Four -> "4";
-            case Five -> "5";
-            case Six -> "6";
-            case Seven -> "7";
-            case Eight -> "8";
-            case Nine -> "9";
-            case Skip -> isCornerText ? "S" : "SKIP";
-            case Reverse -> isCornerText ? "R" : "REV";
-            case Draw_Two -> "+2";
-            case Wild -> isCornerText ? "W" : "WILD";
-            case Wild_Draw_Four -> isCornerText ? "+4" : "W+4";
+            case ZERO -> "0";
+            case ONE -> "1";
+            case TWO -> "2";
+            case THREE -> "3";
+            case FOUR -> "4";
+            case FIVE -> "5";
+            case SIX -> "6";
+            case SEVEN -> "7";
+            case EIGHT -> "8";
+            case NINE -> "9";
+            case SKIP -> isCornerText ? "S" : "SKIP";
+            case REVERSE -> isCornerText ? "R" : "REV";
+            case DRAW_TWO -> "+2";
+            case WILD -> isCornerText ? "W" : "WILD";
+            case WILD_DRAW_FOUR -> isCornerText ? "+4" : "W+4";
         };
     }
 

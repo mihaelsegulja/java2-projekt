@@ -26,8 +26,7 @@ public class ChatUtils {
 
     private ChatUtils() {}
 
-    public static Timeline getChatRefreshTimeline(ChatRemoteService chatRemoteService, TextArea chatMessageTextArea)
-    {
+    public static Timeline getChatRefreshTimeline(ChatRemoteService chatRemoteService, TextArea chatMessageTextArea) {
         Timeline chatMessagesRefreshTimeLine = new Timeline(new KeyFrame(Duration.ZERO, e -> {
             try {
                 List<String> chatMessages =  chatRemoteService.getAllMessages();
@@ -48,8 +47,7 @@ public class ChatUtils {
         return chatMessagesRefreshTimeLine;
     }
 
-    public static void sendChatMessage(ChatRemoteService chatRemoteService, TextField chatMessageTextField)
-    {
+    public static void sendChatMessage(ChatRemoteService chatRemoteService, TextField chatMessageTextField) {
         String chatMessage = chatMessageTextField.getText();
         if(chatMessage.isBlank()) return;
         chatMessageTextField.clear();
@@ -61,7 +59,6 @@ public class ChatUtils {
     }
 
     public static Optional<ChatRemoteService> initializeChatRemoteService() {
-
         Optional<ChatRemoteService> chatRemoteServiceOptional = Optional.empty();
 
         try {

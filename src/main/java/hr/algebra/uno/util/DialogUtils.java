@@ -26,12 +26,12 @@ public class DialogUtils {
     public static Color showColorPickerDialog() {
         Alert dialog = new Alert(Alert.AlertType.NONE);
         dialog.setTitle("Choose Color");
-        dialog.setHeaderText("Select a color for the Wild card:");
+        dialog.setHeaderText("Select a color for the WILD card:");
 
-        ButtonType red = new ButtonType("Red");
-        ButtonType yellow = new ButtonType("Yellow");
-        ButtonType green = new ButtonType("Green");
-        ButtonType blue = new ButtonType("Blue");
+        ButtonType red = new ButtonType("RED");
+        ButtonType yellow = new ButtonType("YELLOW");
+        ButtonType green = new ButtonType("GREEN");
+        ButtonType blue = new ButtonType("BLUE");
 
         dialog.getButtonTypes().setAll(red, yellow, green, blue);
 
@@ -55,10 +55,10 @@ public class DialogUtils {
 
         ButtonType result = dialog.showAndWait().orElse(null);
 
-        if (result == red)    return Color.Red;
-        if (result == yellow) return Color.Yellow;
-        if (result == green)  return Color.Green;
-        if (result == blue)   return Color.Blue;
+        if (result == red)    return Color.RED;
+        if (result == yellow) return Color.YELLOW;
+        if (result == green)  return Color.GREEN;
+        if (result == blue)   return Color.BLUE;
 
         return null;
     }

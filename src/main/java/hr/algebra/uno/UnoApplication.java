@@ -31,7 +31,7 @@ public class UnoApplication extends Application {
 
         if (!valid) {
             System.out.println("Invalid player type: " + firstArg);
-            JOptionPane.showMessageDialog(null, "You provided a player type that does not exist!");
+            JOptionPane.showMessageDialog(null, "You provided an unsupported player type!");
             System.exit(1);
         }
 

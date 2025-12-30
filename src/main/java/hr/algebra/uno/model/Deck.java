@@ -51,29 +51,29 @@ public class Deck implements Serializable {
         reset();
 
         // Add colored cards
-        for (Color color : List.of(Color.Red, Color.Green, Color.Blue, Color.Yellow)) {
+        for (Color color : List.of(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW)) {
 
-            // One ZERO per color
-            drawPile.add(new Card(color, Value.Zero));
+            // ONE ZERO per color
+            drawPile.add(new Card(color, Value.ZERO));
 
-            // Two of each 1–9 per color
-            for (Value value : List.of(Value.One, Value.Two, Value.Three, Value.Four, Value.Five,
-                    Value.Six, Value.Seven, Value.Eight, Value.Nine)) {
+            // TWO of each 1–9 per color
+            for (Value value : List.of(Value.ONE, Value.TWO, Value.THREE, Value.FOUR, Value.FIVE,
+                    Value.SIX, Value.SEVEN, Value.EIGHT, Value.NINE)) {
                 drawPile.add(new Card(color, value));
                 drawPile.add(new Card(color, value));
             }
 
-            // Two of each action card per color
-            for (Value value : List.of(Value.Skip, Value.Reverse, Value.Draw_Two)) {
+            // TWO of each action card per color
+            for (Value value : List.of(Value.SKIP, Value.REVERSE, Value.DRAW_TWO)) {
                 drawPile.add(new Card(color, value));
                 drawPile.add(new Card(color, value));
             }
         }
 
-        // Add Wild and Wild Draw Four cards (no color)
+        // Add WILD and WILD Draw FOUR cards (no color)
         for (int i = 0; i < 4; i++) {
-            drawPile.add(new Card(Color.Wild, Value.Wild));
-            drawPile.add(new Card(Color.Wild, Value.Wild_Draw_Four));
+            drawPile.add(new Card(Color.WILD, Value.WILD));
+            drawPile.add(new Card(Color.WILD, Value.WILD_DRAW_FOUR));
         }
 
         shuffle();

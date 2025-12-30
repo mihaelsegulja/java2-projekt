@@ -58,7 +58,6 @@ public class NetworkManager {
             engine.setGameState(received);
 
             Platform.runLater(() -> {
-                GameController.gameInitialized = true;
                 gameController.renderGameState();
             });
             oos.writeObject("ACK");

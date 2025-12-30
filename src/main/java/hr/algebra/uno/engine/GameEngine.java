@@ -32,7 +32,7 @@ public class GameEngine {
 
         Card first = deck.drawCard();
 
-        if (first.getValue() == Value.Wild_Draw_Four || first.getValue() == Value.Wild) {
+        if (first.getValue() == Value.WILD_DRAW_FOUR || first.getValue() == Value.WILD) {
             first.setWildColor(GameUtils.generateRandomColor());
         }
 
@@ -99,21 +99,21 @@ public class GameEngine {
     public boolean isValidMove(Card played, Card topCard) {
         return played.getColor() == topCard.getColor()
                 || played.getValue() == topCard.getValue()
-                || played.getColor() == Color.Wild;
+                || played.getColor() == Color.WILD;
     }
 
     public void applyCardEffect(Card card) {
         switch (card.getValue()) {
-            case Skip -> nextTurn();
-            case Reverse -> {
+            case SKIP -> nextTurn();
+            case REVERSE -> {
                 gameState.setClockwise(!gameState.isClockwise());
                 nextTurn();
             }
-            case Draw_Two -> {
+            case DRAW_TWO -> {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(2));
             }
-            case Wild_Draw_Four -> {
+            case WILD_DRAW_FOUR -> {
                 Player next = getNextPlayer();
                 next.addCards(gameState.getDeck().drawCards(4));
             }

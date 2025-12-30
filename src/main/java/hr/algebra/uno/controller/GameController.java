@@ -11,6 +11,7 @@ import hr.algebra.uno.util.DialogUtils;
 import hr.algebra.uno.util.DocumentationUtils;
 import hr.algebra.uno.util.GameUtils;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static hr.algebra.uno.UnoApplication.playerType;
 
@@ -44,18 +46,22 @@ public class GameController {
     private NetworkManager networkManager;
     private static final int PLAYER_1_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_1_SERVER_PORT);
     private static final int PLAYER_2_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_2_SERVER_PORT);
-    public static boolean gameInitialized = false;
     ChatRemoteService chatRemoteService;
 
     public void initialize() {
-        if (playerType != PlayerType.Singleplayer) {
-            if (playerType == PlayerType.Player_1) {
+        switch (playerType) {
+            case PLAYER_1 -> {
                 networkManager = new NetworkManager(playerType, PLAYER_1_PORT, PLAYER_2_PORT, this);
                 networkManager.startServer(gameEngine);
-            } else if (playerType == PlayerType.Player_2) {
+            }
+            case PLAYER_2 -> {
                 networkManager = new NetworkManager(playerType, PLAYER_2_PORT, PLAYER_1_PORT, this);
                 networkManager.startServer(gameEngine);
             }
+            case SINGLEPLAYER -> {
+                log.info("SINGLEPLAYER");
+            }
+            default -> log.error("Provided player type not valid.");
         }
 
         Optional<ChatRemoteService> chatRemoteServiceOptional = ChatUtils.initializeChatRemoteService();
@@ -66,15 +72,27 @@ public class GameController {
     }
 
     public void startNewGame() {
-        if (playerType == PlayerType.Player_1) {
-            gameEngine.startNewGame(List.of(
-                    new Player(PlayerType.Player_1.toString(), "Player 1"),
-                    new Player(PlayerType.Player_2.toString(), "Player 2")));
-            networkManager.sendGameState(gameEngine.getGameState());
-            renderGameState();
-            gameInitialized = true;
-        } else if (playerType == PlayerType.Player_2) {
-            lbStatus.setText("Waiting for Player 1 to start the game...");
+        switch (playerType) {
+            case PLAYER_1 -> {
+                gameEngine.startNewGame(List.of(
+                        new Player(PlayerType.PLAYER_1.toString(), "Player 1"),
+                        new Player(PlayerType.PLAYER_2.toString(), "Player 2")));
+                if (networkManager != null) {
+                    networkManager.sendGameState(gameEngine.getGameState());
+                }
+                renderGameState();
+            }
+            case PLAYER_2 -> {
+                lbStatus.setText("Waiting for Player 1 to start the game...");
+            }
+            case SINGLEPLAYER -> {
+                gameEngine.startNewGame(List.of(
+                        new Player(PlayerType.SINGLEPLAYER.toString(), "Player"),
+                        new Player(PlayerType.COMPUTER.toString(), "Computer")
+                ));
+                renderGameState();
+            }
+            default -> log.error("Provided player type not valid.");
         }
     }
 
@@ -146,6 +164,10 @@ public class GameController {
         }
 
         spDrawPile.getChildren().add(drawPileNode);
+
+        if (playerType == PlayerType.SINGLEPLAYER && isComputerTurn(state)) {
+            runComputerMove();
+        }
     }
 
     private void disableGameUI() {
@@ -154,17 +176,56 @@ public class GameController {
         btnUno.setDisable(true);
     }
 
+    private void runComputerMove() {
+        GameState state = gameEngine.getGameState();
+        Player computer = state.getCurrentPlayer();
+
+        new Thread(() -> {
+            ThreadLocalRandom.current().nextInt(500, 1700); // "thinking" delay
+            Platform.runLater(() -> {
+                Card playable = findPlayableCard(computer, state.getDeck().peekTopCard());
+
+                if (playable != null) {
+                    if (playable.getColor() == Color.WILD) {
+                        playable.setWildColor(GameUtils.generateRandomColor());
+                    }
+                    gameEngine.playCard(computer, playable, null);
+                } else {
+                    gameEngine.drawCard(computer);
+                    gameEngine.nextTurn();
+                }
+
+                if (computer.isMustCallUno() && !computer.isUnoCalled()) {
+                    gameEngine.callUno(computer);
+                }
+
+                renderGameState();
+            });
+        }).start();
+    }
+
+    private Card findPlayableCard(Player player, Card topCard) {
+        for (Card card : player.getHand()) {
+            if (gameEngine.isValidMove(card, topCard)) {
+                return card;
+            }
+        }
+        return null;
+    }
+
     private void handleCardClick(Card card) {
         GameState gameState = gameEngine.getGameState();
         int localIndex = resolveLocalPlayerIndex(gameState);
         Player current = gameState.getPlayers().get(localIndex);
-        if (card.getColor() == Color.Wild) {
+        if (card.getColor() == Color.WILD) {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);
         } else {
             gameEngine.playCard(current, card, null);
         }
-        networkManager.sendGameState(gameEngine.getGameState());
+        if (networkManager != null) {
+            networkManager.sendGameState(gameEngine.getGameState());
+        }
         renderGameState();
     }
 
@@ -174,7 +235,9 @@ public class GameController {
         Player current = gameState.getPlayers().get(localIndex);
         lbStatus.setText(current.getName() + "'s turn");
         gameEngine.drawCard(current);
-        networkManager.sendGameState(gameEngine.getGameState());
+        if (networkManager != null) {
+            networkManager.sendGameState(gameEngine.getGameState());
+        }
         renderGameState();
     }
 
@@ -185,7 +248,9 @@ public class GameController {
     public void loadGame() {
         GameState loaded = GameUtils.loadGame();
         gameEngine.setGameState(loaded);
-        networkManager.sendGameState(loaded);
+        if (networkManager != null) {
+            networkManager.sendGameState(gameEngine.getGameState());
+        }
         renderGameState();
     }
 
@@ -237,5 +302,10 @@ public class GameController {
             }
         }
         throw new IllegalStateException("Local player not found in GameState");
+    }
+
+    private boolean isComputerTurn(GameState state) {
+        Player current = state.getCurrentPlayer();
+        return current.getId().equals(PlayerType.COMPUTER.toString());
     }
 }
