@@ -61,12 +61,23 @@ public class GameEngine {
         Card topCard = gameState.getDeck().peekTopCard();
         if (!isValidMove(card, topCard)) return;
 
+        boolean unoWasRequired = player.isMustCallUno() && !player.isUnoCalled();
+
         if (chosenColor != null) {
             card.setWildColor(chosenColor);
         }
 
         player.removeCard(card);
         gameState.getDeck().discardCard(card);
+
+        if (player.getHand().isEmpty() && unoWasRequired) {
+            player.addCards(
+                    gameState.getDeck().drawCards(config.getUnoPenaltyCards())
+            );
+            player.resetUno();
+            nextTurn();
+            return;
+        }
 
         if (player.getHand().size() == 1) {
             player.setMustCallUno(true);

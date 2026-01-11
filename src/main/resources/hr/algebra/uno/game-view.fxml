@@ -23,6 +23,7 @@
               <MenuItem mnemonicParsing="false" onAction="#startNewGame" text="New" />
               <MenuItem mnemonicParsing="false" onAction="#loadGame" text="Load" />
               <MenuItem mnemonicParsing="false" onAction="#saveGame" text="Save" />
+                <MenuItem mnemonicParsing="false" onAction="#quitGame" text="Quit" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Docs">

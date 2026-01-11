@@ -8,12 +8,10 @@ import hr.algebra.uno.jndi.ConfigurationReader;
 import hr.algebra.uno.model.*;
 import hr.algebra.uno.network.NetworkManager;
 import hr.algebra.uno.rmi.ChatRemoteService;
-import hr.algebra.uno.util.ChatUtils;
-import hr.algebra.uno.util.DialogUtils;
-import hr.algebra.uno.util.DocumentationUtils;
-import hr.algebra.uno.util.GameUtils;
+import hr.algebra.uno.util.*;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -78,6 +76,7 @@ public class GameController {
     }
 
     public void startNewGame() {
+        resetGameUI();
         switch (playerType) {
             case PLAYER_1 -> {
                 gameEngine.startNewGame(List.of(
@@ -102,6 +101,19 @@ public class GameController {
         }
     }
 
+    private void resetGameUI() {
+        hbPlayerHand.setDisable(false);
+        hbOpponentHand.setDisable(false);
+        spDrawPile.setDisable(false);
+        btnUno.setDisable(false);
+        btnUno.setVisible(false);
+
+        hbPlayerHand.getChildren().clear();
+        hbOpponentHand.getChildren().clear();
+        spDrawPile.getChildren().clear();
+        spDiscardPile.getChildren().clear();
+    }
+
     public void renderGameState() {
         GameState state = gameEngine.getGameState();
         hbPlayerHand.getChildren().clear();
@@ -111,7 +123,6 @@ public class GameController {
 
         if (state.isGameOver()) {
             DialogUtils.showWinnerDialog(state.getWinnerName());
-            disableGameUI();
             return;
         }
 
@@ -129,8 +140,11 @@ public class GameController {
 
         for (Card card : me.getHand()) {
             Node cardNode = GameUtils.createCardNode(card, true);
+            AnimationUtils.applyHoverScale(cardNode);
 
             if (myTurn) {
+                cardNode.setDisable(false);
+                cardNode.setOpacity(1.0);
                 cardNode.setOnMouseClicked(e -> handleCardClick(card));
                 cardNode.setCursor(Cursor.HAND);
             } else {
@@ -161,6 +175,7 @@ public class GameController {
         if (myTurn) {
             drawPileNode.setOnMouseClicked(e -> handleDrawCardClick());
             drawPileNode.setCursor(Cursor.HAND);
+            drawPileNode.setOpacity(1.0);
         } else {
             drawPileNode.setOpacity(0.6);
             drawPileNode.setOnMouseClicked(null);
@@ -173,20 +188,24 @@ public class GameController {
         }
     }
 
-    private void disableGameUI() {
-        hbPlayerHand.setDisable(true);
-        spDrawPile.setDisable(true);
-        btnUno.setDisable(true);
-    }
-
     private void runComputerMove() {
         GameState state = gameEngine.getGameState();
         Player computer = state.getCurrentPlayer();
 
         new Thread(() -> {
-            ThreadLocalRandom.current().nextInt(config.getComputerThinkingDelayMin(), config.getComputerThinkingDelayMax());
+            try {
+                int delay = ThreadLocalRandom.current().nextInt(
+                        config.getComputerThinkingDelayMin(),
+                        config.getComputerThinkingDelayMax()
+                );
+                Thread.sleep(delay);
+            } catch (InterruptedException ignored) {}
+
             Platform.runLater(() -> {
-                Card playable = findPlayableCard(computer, state.getDeck().peekTopCard());
+                Card playable = findPlayableCard(
+                        computer,
+                        state.getDeck().peekTopCard()
+                );
 
                 if (playable != null) {
                     if (playable.getColor() == Color.WILD) {
@@ -198,9 +217,10 @@ public class GameController {
                     gameEngine.nextTurn();
                 }
 
-                if (computer.isMustCallUno() &&
-                        !computer.isUnoCalled() &&
-                        ThreadLocalRandom.current().nextDouble() < config.getComputerCallUnoProbability()) {
+                if (computer.isMustCallUno()
+                        && !computer.isUnoCalled()
+                        && ThreadLocalRandom.current().nextDouble()
+                        < config.getComputerCallUnoProbability()) {
                     gameEngine.callUno(computer);
                 }
 
@@ -304,5 +324,9 @@ public class GameController {
 
     private Player getLocalPlayer() {
         return gameEngine.getPlayerById(getLocalPlayerId());
+    }
+
+    public void quitGame() {
+        Platform.exit();
     }
 }
