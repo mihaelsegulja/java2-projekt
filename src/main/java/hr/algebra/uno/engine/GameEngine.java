@@ -1,7 +1,9 @@
 package hr.algebra.uno.engine;
 
+import hr.algebra.uno.config.GameConfig;
 import hr.algebra.uno.model.*;
 import hr.algebra.uno.util.GameUtils;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,9 +12,16 @@ import java.util.List;
 import java.util.Random;
 
 @NoArgsConstructor
+@AllArgsConstructor
 public class GameEngine {
     @Getter @Setter
     private GameState gameState;
+    @Getter @Setter
+    private GameConfig config;
+
+    public GameEngine(GameConfig config) {
+        this.config = config;
+    }
 
     public GameEngine(GameState state) {
         this.gameState = state;
@@ -22,7 +31,7 @@ public class GameEngine {
         Deck deck = createStandardDeck();
 
         for (Player p : players) {
-            List<Card> dealt = deck.drawCards(7);
+            List<Card> dealt = deck.drawCards(config.getStartingCards());
             p.addCards(dealt);
         }
 
@@ -142,5 +151,16 @@ public class GameEngine {
         if (player.isMustCallUno() && !player.isUnoCalled()) {
             player.setUnoCalled(true);
         }
+    }
+
+    public boolean isPlayersTurn(String playerId) {
+        return gameState.getCurrentPlayer().getId().equals(playerId);
+    }
+
+    public Player getPlayerById(String playerId) {
+        return gameState.getPlayers().stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Player not found: " + playerId));
     }
 }

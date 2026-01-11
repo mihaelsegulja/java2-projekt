@@ -1,5 +1,7 @@
 package hr.algebra.uno.controller;
 
+import hr.algebra.uno.config.GameConfig;
+import hr.algebra.uno.config.GameConfigParser;
 import hr.algebra.uno.engine.GameEngine;
 import hr.algebra.uno.jndi.ConfigurationKey;
 import hr.algebra.uno.jndi.ConfigurationReader;
@@ -42,13 +44,17 @@ public class GameController {
     @FXML private Button btnUno;
 
     private static final Logger log = LoggerFactory.getLogger(GameController.class);
-    private GameEngine gameEngine = new GameEngine();
+    private GameConfig config;
+    private GameEngine gameEngine;
     private NetworkManager networkManager;
     private static final int PLAYER_1_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_1_SERVER_PORT);
     private static final int PLAYER_2_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_2_SERVER_PORT);
     ChatRemoteService chatRemoteService;
 
     public void initialize() {
+        config = GameConfigParser.load();
+        gameEngine = new GameEngine(config);
+
         switch (playerType) {
             case PLAYER_1 -> {
                 networkManager = new NetworkManager(playerType, PLAYER_1_PORT, PLAYER_2_PORT, this);
@@ -112,10 +118,10 @@ public class GameController {
         String currPlayer = state.getCurrentPlayer().getName();
         lbStatus.setText(currPlayer + "'s turn");
 
-        int localIndex = resolveLocalPlayerIndex(state);
-        Player me = state.getPlayers().get(localIndex);
+        Player me = getLocalPlayer();
+        boolean myTurn = gameEngine.isPlayersTurn(getLocalPlayerId());
 
-        log.info("Current turn: {}", state.getCurrentPlayer().getName());
+        log.info("Current turn: {}", currPlayer);
         log.info("Local player resolved as: {}", me.getName());
 
         btnUno.setVisible(me.isMustCallUno() && !me.isUnoCalled());
@@ -124,7 +130,7 @@ public class GameController {
         for (Card card : me.getHand()) {
             Node cardNode = GameUtils.createCardNode(card, true);
 
-            if (state.getCurrentPlayerIndex() == localIndex) {
+            if (myTurn) {
                 cardNode.setOnMouseClicked(e -> handleCardClick(card));
                 cardNode.setCursor(Cursor.HAND);
             } else {
@@ -135,15 +141,12 @@ public class GameController {
             hbPlayerHand.getChildren().add(cardNode);
         }
 
-        int opponentIndex = -1;
-        for (int i = 0; i < state.getPlayers().size(); i++) {
-            if (i != localIndex) {
-                opponentIndex = i;
-                break;
-            }
-        }
+        Player opponent = state.getPlayers().stream()
+                .filter(p -> !p.getId().equals(getLocalPlayerId()))
+                .findFirst()
+                .orElseThrow();
 
-        int opponentCardCount = state.getPlayers().get(opponentIndex).getHand().size();
+        int opponentCardCount = opponent.getHand().size();
         for (int i = 0; i < opponentCardCount; i++) {
             hbOpponentHand.getChildren().add(GameUtils.createCardNode(null, false));
         }
@@ -155,7 +158,7 @@ public class GameController {
 
         Node drawPileNode = GameUtils.createCardNode(null, false);
 
-        if (state.getCurrentPlayerIndex() == localIndex) {
+        if (myTurn) {
             drawPileNode.setOnMouseClicked(e -> handleDrawCardClick());
             drawPileNode.setCursor(Cursor.HAND);
         } else {
@@ -181,7 +184,7 @@ public class GameController {
         Player computer = state.getCurrentPlayer();
 
         new Thread(() -> {
-            ThreadLocalRandom.current().nextInt(500, 1700); // "thinking" delay
+            ThreadLocalRandom.current().nextInt(config.getComputerThinkingDelayMin(), config.getComputerThinkingDelayMax());
             Platform.runLater(() -> {
                 Card playable = findPlayableCard(computer, state.getDeck().peekTopCard());
 
@@ -195,7 +198,9 @@ public class GameController {
                     gameEngine.nextTurn();
                 }
 
-                if (computer.isMustCallUno() && !computer.isUnoCalled()) {
+                if (computer.isMustCallUno() &&
+                        !computer.isUnoCalled() &&
+                        ThreadLocalRandom.current().nextDouble() < config.getComputerCallUnoProbability()) {
                     gameEngine.callUno(computer);
                 }
 
@@ -214,9 +219,8 @@ public class GameController {
     }
 
     private void handleCardClick(Card card) {
-        GameState gameState = gameEngine.getGameState();
-        int localIndex = resolveLocalPlayerIndex(gameState);
-        Player current = gameState.getPlayers().get(localIndex);
+        Player current = getLocalPlayer();
+        if (!gameEngine.isPlayersTurn(getLocalPlayerId())) return;
         if (card.getColor() == Color.WILD) {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);
@@ -230,9 +234,7 @@ public class GameController {
     }
 
     private void handleDrawCardClick() {
-        GameState gameState = gameEngine.getGameState();
-        int localIndex = resolveLocalPlayerIndex(gameState);
-        Player current = gameState.getPlayers().get(localIndex);
+        Player current = getLocalPlayer();
         lbStatus.setText(current.getName() + "'s turn");
         gameEngine.drawCard(current);
         if (networkManager != null) {
@@ -281,31 +283,26 @@ public class GameController {
     }
 
     public void handleUnoClick() {
-        GameState gameState = gameEngine.getGameState();
-        int localIndex = resolveLocalPlayerIndex(gameState);
-        Player me = gameState.getPlayers().get(localIndex);
-
-        if (me.isMustCallUno() && !me.isUnoCalled()) {
-            gameEngine.callUno(me);
+        Player current = getLocalPlayer();
+        if (current.isMustCallUno() && !current.isUnoCalled()) {
+            gameEngine.callUno(current);
             btnUno.setVisible(false);
-
             if (networkManager != null) {
                 networkManager.sendGameState(gameEngine.getGameState());
             }
         }
     }
 
-    private int resolveLocalPlayerIndex(GameState state) {
-        for (int i = 0; i < state.getPlayers().size(); i++) {
-            if (state.getPlayers().get(i).getId().equals(playerType.toString())) {
-                return i;
-            }
-        }
-        throw new IllegalStateException("Local player not found in GameState");
-    }
-
     private boolean isComputerTurn(GameState state) {
         Player current = state.getCurrentPlayer();
         return current.getId().equals(PlayerType.COMPUTER.toString());
+    }
+
+    private String getLocalPlayerId() {
+        return playerType.toString();
+    }
+
+    private Player getLocalPlayer() {
+        return gameEngine.getPlayerById(getLocalPlayerId());
     }
 }

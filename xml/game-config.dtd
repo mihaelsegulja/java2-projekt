@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!ELEMENT game-config (rules, computer, ui)>
+
+<!ELEMENT rules (
+        starting-cards,
+        must-call-uno,
+        uno-penalty-cards,
+        allow-stacking,
+        draw-until-playable,
+        initial-direction
+        )>
+
+<!ELEMENT computer (
+        thinking-delay-min,
+        thinking-delay-max,
+        call-uno-probability
+        )>
+
+<!ELEMENT ui (
+        enable-animations,
+        show-playable-hints
+        )>
+
+<!ELEMENT starting-cards (#PCDATA)>
+<!ELEMENT must-call-uno (#PCDATA)>
+<!ELEMENT uno-penalty-cards (#PCDATA)>
+<!ELEMENT allow-stacking (#PCDATA)>
+<!ELEMENT draw-until-playable (#PCDATA)>
+<!ELEMENT initial-direction (#PCDATA)>
+
+<!ELEMENT thinking-delay-min (#PCDATA)>
+<!ELEMENT thinking-delay-max (#PCDATA)>
+<!ELEMENT call-uno-probability (#PCDATA)>
+
+<!ELEMENT enable-animations (#PCDATA)>
+<!ELEMENT show-playable-hints (#PCDATA)>

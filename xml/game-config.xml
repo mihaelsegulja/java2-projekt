@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE game-config SYSTEM "game-config.dtd">
+<game-config>
+
+    <rules>
+        <starting-cards>7</starting-cards>
+        <must-call-uno>true</must-call-uno>
+        <uno-penalty-cards>2</uno-penalty-cards>
+        <allow-stacking>false</allow-stacking>
+        <draw-until-playable>false</draw-until-playable>
+        <initial-direction>CLOCKWISE</initial-direction>
+    </rules>
+
+    <computer>
+        <thinking-delay-min>500</thinking-delay-min>
+        <thinking-delay-max>1700</thinking-delay-max>
+        <call-uno-probability>0.9</call-uno-probability>
+    </computer>
+
+    <ui>
+        <enable-animations>true</enable-animations>
+        <show-playable-hints>false</show-playable-hints>
+    </ui>
+
+</game-config>
