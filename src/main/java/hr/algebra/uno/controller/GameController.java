@@ -11,7 +11,6 @@ import hr.algebra.uno.rmi.ChatRemoteService;
 import hr.algebra.uno.util.*;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -130,7 +129,7 @@ public class GameController {
         lbStatus.setText(currPlayer + "'s turn");
 
         Player me = getLocalPlayer();
-        boolean myTurn = gameEngine.isPlayersTurn(getLocalPlayerId());
+        boolean myTurn = gameEngine.isPlayersTurn(me.getId());
 
         log.info("Current turn: {}", currPlayer);
         log.info("Local player resolved as: {}", me.getName());
@@ -138,9 +137,12 @@ public class GameController {
         btnUno.setVisible(me.isMustCallUno() && !me.isUnoCalled());
         btnUno.setDisable(!(me.isMustCallUno() && !me.isUnoCalled()));
 
-        for (Card card : me.getHand()) {
+        for (int i = me.getHand().size() - 1; i >= 0; i--) {
+            Card card = me.getHand().get(i);
             Node cardNode = GameUtils.createCardNode(card, true);
-            AnimationUtils.applyHoverScale(cardNode);
+            if(config.isEnableAnimations()) {
+                AnimationUtils.applyHoverScale(cardNode);
+            }
 
             if (myTurn) {
                 cardNode.setDisable(false);
@@ -156,7 +158,7 @@ public class GameController {
         }
 
         Player opponent = state.getPlayers().stream()
-                .filter(p -> !p.getId().equals(getLocalPlayerId()))
+                .filter(p -> !p.getId().equals(me.getId()))
                 .findFirst()
                 .orElseThrow();
 
@@ -202,10 +204,10 @@ public class GameController {
             } catch (InterruptedException ignored) {}
 
             Platform.runLater(() -> {
-                Card playable = findPlayableCard(
-                        computer,
-                        state.getDeck().peekTopCard()
-                );
+                Card playable = computer.getHand().stream()
+                        .filter(card -> gameEngine.isValidMove(card, state.getDeck().peekTopCard()))
+                        .findFirst()
+                        .orElse(null);
 
                 if (playable != null) {
                     if (playable.getColor() == Color.WILD) {
@@ -229,18 +231,9 @@ public class GameController {
         }).start();
     }
 
-    private Card findPlayableCard(Player player, Card topCard) {
-        for (Card card : player.getHand()) {
-            if (gameEngine.isValidMove(card, topCard)) {
-                return card;
-            }
-        }
-        return null;
-    }
-
     private void handleCardClick(Card card) {
         Player current = getLocalPlayer();
-        if (!gameEngine.isPlayersTurn(getLocalPlayerId())) return;
+        if (!gameEngine.isPlayersTurn(current.getId())) return;
         if (card.getColor() == Color.WILD) {
             Color chosenColor = DialogUtils.showColorPickerDialog();
             gameEngine.playCard(current, card, chosenColor);
@@ -285,7 +278,7 @@ public class GameController {
             log.info("Documentation file generated.");
         } catch (IOException e) {
             DialogUtils.showDialog("Error",
-                    "Something went wrong while generating HTML docs.",
+                    "Error while generating HTML docs.",
                     Alert.AlertType.ERROR);
             log.error("Documentation file failed to generate.", e);
         }
@@ -318,12 +311,8 @@ public class GameController {
         return current.getId().equals(PlayerType.COMPUTER.toString());
     }
 
-    private String getLocalPlayerId() {
-        return playerType.toString();
-    }
-
     private Player getLocalPlayer() {
-        return gameEngine.getPlayerById(getLocalPlayerId());
+        return gameEngine.getPlayerById(playerType.toString());
     }
 
     public void quitGame() {

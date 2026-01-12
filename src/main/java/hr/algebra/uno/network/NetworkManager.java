@@ -21,7 +21,7 @@ public class NetworkManager {
     private final PlayerType playerType;
     private final int listenPort;
     private final int targetPort;
-    private static final String host = ConfigurationReader.getStringValueForKey(ConfigurationKey.HOSTNAME);
+    private static final String HOST = ConfigurationReader.getStringValueForKey(ConfigurationKey.HOSTNAME);
     private GameController gameController;
 
     public NetworkManager(PlayerType playerType, int listenPort, int targetPort, GameController gameController) {
@@ -37,11 +37,11 @@ public class NetworkManager {
 
     private void acceptConnections(GameEngine engine) {
         try (ServerSocket serverSocket = new ServerSocket(listenPort)) {
-            System.out.printf("[%s] Listening on port %d%n", playerType, listenPort);
+            log.info("[{}] Listening on port {}", playerType, listenPort);
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.printf("[%s] Client connected from %s%n", playerType, socket.getInetAddress());
+                log.info("[{}] Client connected from {}", playerType, socket.getInetAddress());
                 new Thread(() -> handleClient(socket, engine)).start();
             }
         } catch (IOException e) {
@@ -54,7 +54,7 @@ public class NetworkManager {
              ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
 
             GameState received = (GameState) ois.readObject();
-            System.out.println("[" + playerType + "] Received GameState from remote player.");
+            log.info("[{}] Received GameState from remote player.", playerType);
             engine.setGameState(received);
 
             Platform.runLater(() -> {
@@ -68,14 +68,14 @@ public class NetworkManager {
     }
 
     public void sendGameState(GameState state) {
-        try (Socket socket = new Socket(host, targetPort)) {
+        try (Socket socket = new Socket(HOST, targetPort)) {
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
             oos.writeObject(state);
-            System.out.printf("%s, %s", state.getCurrentPlayer().getId(), state.getDeck().peekTopCard().toString());
-            System.out.printf("[%s] GameState sent to port %d%n", playerType, targetPort);
-            System.out.println("Response: " + ois.readObject());
+            log.info("{}, {}", state.getCurrentPlayer().getId(), state.getDeck().peekTopCard());
+            log.info("[{}] GameState sent to port {}", playerType, targetPort);
+            log.info("Response: {}", ois.readObject());
         } catch (IOException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);
         }

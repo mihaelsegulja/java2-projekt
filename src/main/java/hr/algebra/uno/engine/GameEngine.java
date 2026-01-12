@@ -71,9 +71,7 @@ public class GameEngine {
         gameState.getDeck().discardCard(card);
 
         if (player.getHand().isEmpty() && unoWasRequired) {
-            player.addCards(
-                    gameState.getDeck().drawCards(config.getUnoPenaltyCards())
-            );
+            player.addCards(gameState.getDeck().drawCards(config.getUnoPenaltyCards()));
             player.resetUno();
             nextTurn();
             return;

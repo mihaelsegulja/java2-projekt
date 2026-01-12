@@ -14,7 +14,6 @@ public class RmiServer {
     private static final Logger log = LoggerFactory.getLogger(RmiServer.class);
     private static final int RANDOM_PORT_HINT = 0;
     public static final int RMI_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.RMI_SERVER_PORT);
-    public static final String HOSTNAME = ConfigurationReader.getStringValueForKey(ConfigurationKey.HOSTNAME);
 
     public static void main(String[] args) {
         try {

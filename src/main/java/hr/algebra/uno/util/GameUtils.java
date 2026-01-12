@@ -66,40 +66,41 @@ public class GameUtils {
         rect.setArcHeight(10);
         rect.setStroke(javafx.scene.paint.Color.BLACK);
 
+        Rectangle innerRect = new Rectangle(70, 110);
+        innerRect.setArcWidth(8);
+        innerRect.setArcHeight(8);
+
+        Ellipse unoOval = new Ellipse(30, 20);
+        unoOval.setFill(javafx.scene.paint.Color.WHITE);
+        unoOval.setRotate(-20);
+
+        DropShadow textShadow = new DropShadow();
+        textShadow.setRadius(1.0);
+        textShadow.setOffsetX(1.0);
+        textShadow.setOffsetY(1.0);
+        textShadow.setColor(javafx.scene.paint.Color.BLACK);
+
         if (faceUp) {
             rect.setFill(javafx.scene.paint.Color.WHITE);
 
-            Rectangle innerRect = new Rectangle(70, 110);
-            innerRect.setArcWidth(8);
-            innerRect.setArcHeight(8);
             innerRect.setFill(GameUtils.getColorForCard(card.getColor()));
 
             String cardText = GameUtils.getCardDisplayText(card.getValue(), false);
 
-            DropShadow textShadow = new DropShadow();
-            textShadow.setRadius(1.0);
-            textShadow.setOffsetX(1.0);
-            textShadow.setOffsetY(1.0);
-            textShadow.setColor(javafx.scene.paint.Color.BLACK);
-
             Label centerLabel = new Label(cardText);
 
-            javafx.scene.paint.Color labelColor = javafx.scene.paint.Color.WHITE;
-
-            centerLabel.setTextFill(labelColor);
+            centerLabel.setTextFill(GameUtils.getColorForCard(card.getColor()));
             centerLabel.setEffect(textShadow);
 
             FontWeight weight = (card.getValue().ordinal() <= 9) ? FontWeight.EXTRA_BOLD : FontWeight.BOLD;
             int fontSize = (card.getValue().ordinal() <= 9) ? 36 : 24;
             centerLabel.setFont(Font.font("Arial", weight, fontSize));
 
-            cardPane.getChildren().addAll(rect, innerRect, centerLabel);
-
             String cornerText = GameUtils.getCardDisplayText(card.getValue(), true);
 
             Label cornerLabelTL = new Label(cornerText);
             cornerLabelTL.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
-            cornerLabelTL.setTextFill(labelColor);
+            cornerLabelTL.setTextFill(javafx.scene.paint.Color.WHITE);
             cornerLabelTL.setEffect(textShadow);
             StackPane.setAlignment(cornerLabelTL, Pos.TOP_LEFT);
             cornerLabelTL.setTranslateX(10);
@@ -107,35 +108,29 @@ public class GameUtils {
 
             Label cornerLabelBR = new Label(cornerText);
             cornerLabelBR.setFont(Font.font("Arial", FontWeight.SEMI_BOLD, 13));
-            cornerLabelBR.setTextFill(labelColor);
+            cornerLabelBR.setTextFill(javafx.scene.paint.Color.WHITE);
             cornerLabelBR.setEffect(textShadow);
             StackPane.setAlignment(cornerLabelBR, Pos.BOTTOM_RIGHT);
             cornerLabelBR.setTranslateX(-10);
             cornerLabelBR.setTranslateY(-10);
             cornerLabelBR.setRotate(180);
 
-            cardPane.getChildren().addAll(cornerLabelTL, cornerLabelBR);
+            cardPane.getChildren().addAll(rect, innerRect, unoOval, centerLabel, cornerLabelTL, cornerLabelBR);
 
         } else {
             rect.setFill(javafx.scene.paint.Color.WHITE);
 
-            Rectangle innerRect = new Rectangle(70, 110);
-            innerRect.setArcWidth(8);
-            innerRect.setArcHeight(8);
             innerRect.setFill(new LinearGradient(
                     0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                     new Stop(0, javafx.scene.paint.Color.DARKRED),
                     new Stop(1, javafx.scene.paint.Color.BLACK)
             ));
 
-            Ellipse unoOval = new Ellipse(25, 15);
-            unoOval.setFill(javafx.scene.paint.Color.WHITE);
-            unoOval.setRotate(-20);
-
             Label unoText = new Label("UNO");
             unoText.setTextFill(javafx.scene.paint.Color.GOLDENROD);
-            unoText.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 20));
+            unoText.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 24));
             unoText.setRotate(-20);
+            unoText.setEffect(textShadow);
 
             cardPane.getChildren().addAll(rect, innerRect, unoOval, unoText);
         }
