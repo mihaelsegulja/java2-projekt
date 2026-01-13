@@ -139,9 +139,19 @@ public class GameController {
 
         for (int i = me.getHand().size() - 1; i >= 0; i--) {
             Card card = me.getHand().get(i);
-            Node cardNode = GameUtils.createCardNode(card, true);
+            Node cardNode = UIUtils.createCardNode(card, true);
             if(config.isEnableAnimations()) {
                 AnimationUtils.applyHoverScale(cardNode);
+            }
+
+            boolean playable = myTurn
+                    && config.isShowPlayableHints()
+                    && gameEngine.isValidMove(card, state.getDeck().peekTopCard());
+
+            if (playable) {
+                cardNode.setStyle("""
+        -fx-effect: dropshadow(gaussian, rgba(255, 0, 132, 0.8), 15, 0.5, 0, 0);
+        """);
             }
 
             if (myTurn) {
@@ -164,15 +174,15 @@ public class GameController {
 
         int opponentCardCount = opponent.getHand().size();
         for (int i = 0; i < opponentCardCount; i++) {
-            hbOpponentHand.getChildren().add(GameUtils.createCardNode(null, false));
+            hbOpponentHand.getChildren().add(UIUtils.createCardNode(null, false));
         }
 
         Card topDiscard = state.getDeck().peekTopCard();
         if (topDiscard != null) {
-            spDiscardPile.getChildren().add(GameUtils.createCardNode(topDiscard, true));
+            spDiscardPile.getChildren().add(UIUtils.createCardNode(topDiscard, true));
         }
 
-        Node drawPileNode = GameUtils.createCardNode(null, false);
+        Node drawPileNode = UIUtils.createCardNode(null, false);
 
         if (myTurn) {
             drawPileNode.setOnMouseClicked(e -> handleDrawCardClick());
@@ -210,10 +220,11 @@ public class GameController {
                         .orElse(null);
 
                 if (playable != null) {
-                    if (playable.getColor() == Color.WILD) {
-                        playable.setWildColor(GameUtils.generateRandomColor());
+                    Color chosenColor = null;
+                    if (playable.getValue() == Value.WILD || playable.getValue() == Value.WILD_DRAW_FOUR) {
+                        chosenColor = GameUtils.generateRandomColor();
                     }
-                    gameEngine.playCard(computer, playable, null);
+                    gameEngine.playCard(computer, playable, chosenColor);
                 } else {
                     gameEngine.drawCard(computer);
                     gameEngine.nextTurn();

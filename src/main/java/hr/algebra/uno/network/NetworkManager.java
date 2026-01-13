@@ -55,9 +55,9 @@ public class NetworkManager {
 
             GameState received = (GameState) ois.readObject();
             log.info("[{}] Received GameState from remote player.", playerType);
-            engine.setGameState(received);
 
             Platform.runLater(() -> {
+                engine.setGameState(received);
                 gameController.renderGameState();
             });
             oos.writeObject("ACK");

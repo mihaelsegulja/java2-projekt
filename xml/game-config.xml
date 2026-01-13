@@ -19,7 +19,7 @@
 
     <ui>
         <enable-animations>true</enable-animations>
-        <show-playable-hints>false</show-playable-hints>
+        <show-playable-hints>true</show-playable-hints>
     </ui>
 
 </game-config>
