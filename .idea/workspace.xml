@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="86d1d13d-3a4c-4827-b999-486306357136" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/util/ComputerHelper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/controller/GameController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/controller/GameController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/network/NetworkManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/network/NetworkManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/util/ChatUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/util/ChatUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/jndi/ConfigurationReader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/hr/algebra/uno/jndi/ConfigurationReader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,10 +43,10 @@
   "keyToString": {
     "Application.HelloApplication.executor": "Run",
     "Application.Launcher.executor": "Debug",
-    "Application.RmiServer.executor": "Debug",
+    "Application.RmiServer.executor": "Run",
     "Application.UnoApplication-Player_1.executor": "Run",
     "Application.UnoApplication-Player_2.executor": "Run",
-    "Application.UnoApplication-SinglePlayer.executor": "Debug",
+    "Application.UnoApplication-SinglePlayer.executor": "Run",
     "Application.UnoApplication.executor": "Run",
     "Maven.uno [clean,install].executor": "Run",
     "Maven.uno [javafx:run].executor": "Run",

@@ -112,81 +112,112 @@ public class GameController {
         GameState state = gameEngine.getGameState();
         clearBoard();
 
-        if (state.isGameOver()) {
-            DialogUtils.showWinnerDialog(state.getWinnerName());
-            return;
-        }
+        if (handleGameOver(state)) return;
 
-        String currPlayer = state.getCurrentPlayer().getName();
-        lbStatus.setText(currPlayer + "'s turn");
+        updateTurnStatus(state);
+        updateUnoButton();
+        renderPlayerHand(state);
+        renderOpponentHand(state);
+        renderDiscardPile(state);
+        renderDrawPile(state);
+        maybeRunComputerMove(state);
+    }
 
+    private static boolean handleGameOver(GameState state) {
+        if (!state.isGameOver()) return false;
+        DialogUtils.showWinnerDialog(state.getWinnerName());
+        return true;
+    }
+
+    private void updateTurnStatus(GameState state) {
+        lbStatus.setText(state.getCurrentPlayer().getName() + "'s turn");
+    }
+
+    private void updateUnoButton() {
+        Player me = getLocalPlayer();
+        boolean mustCall = me.isMustCallUno() && !me.isUnoCalled();
+        btnUno.setVisible(mustCall);
+        btnUno.setDisable(!mustCall);
+    }
+
+    private void renderPlayerHand(GameState state) {
         Player me = getLocalPlayer();
         boolean myTurn = gameEngine.isPlayersTurn(me.getId());
 
-        log.debug("Current turn: {}", currPlayer);
-        log.debug("Local player resolved as: {}", me.getName());
-
-        btnUno.setVisible(me.isMustCallUno() && !me.isUnoCalled());
-        btnUno.setDisable(!(me.isMustCallUno() && !me.isUnoCalled()));
-
         for (int i = me.getHand().size() - 1; i >= 0; i--) {
             Card card = me.getHand().get(i);
-            Node cardNode = UIUtils.createCardNode(card, true);
-            if(config.isEnableAnimations()) {
-                AnimationUtils.applyHoverScale(cardNode);
-            }
+            Node node = createPlayerCardNode(card, state, myTurn);
+            hbPlayerHand.getChildren().add(node);
+        }
+    }
 
-            boolean playable = myTurn
-                    && config.isShowPlayableHints()
-                    && gameEngine.isValidMove(card, state.getDeck().peekTopCard());
+    private Node createPlayerCardNode(Card card, GameState state, boolean myTurn) {
+        Node node = UIUtils.createCardNode(card, true);
 
-            if (playable) {
-                cardNode.setStyle("""
-        -fx-effect: dropshadow(gaussian, rgba(255, 0, 132, 0.9), 15, 0.5, 0, 0);
+        if (config.isEnableAnimations()) AnimationUtils.applyHoverScale(node);
+
+        if (isPlayableHint(card, state, myTurn)) {
+            node.setStyle("""
+            -fx-effect: dropshadow(gaussian, rgba(255, 0, 132, 0.9), 15, 0.5, 0, 0);
         """);
-            }
-
-            if (myTurn) {
-                cardNode.setDisable(false);
-                cardNode.setOpacity(1.0);
-                cardNode.setOnMouseClicked(e -> handleCardClick(card));
-                cardNode.setCursor(Cursor.HAND);
-            } else {
-                cardNode.setDisable(true);
-                cardNode.setOpacity(0.6);
-            }
-
-            hbPlayerHand.getChildren().add(cardNode);
         }
 
+        configureCardInteraction(node, card, myTurn);
+        return node;
+    }
+
+    private boolean isPlayableHint(Card card, GameState state, boolean myTurn) {
+        return myTurn
+                && config.isShowPlayableHints()
+                && gameEngine.isValidMove(card, state.getDeck().peekTopCard());
+    }
+
+    private void configureCardInteraction(Node node, Card card, boolean myTurn) {
+        if (!myTurn) {
+            node.setDisable(true);
+            node.setOpacity(0.6);
+            return;
+        }
+
+        node.setDisable(false);
+        node.setOpacity(1.0);
+        node.setCursor(Cursor.HAND);
+        node.setOnMouseClicked(e -> handleCardClick(card));
+    }
+
+    private void renderOpponentHand(GameState state) {
         Player opponent = state.getPlayers().stream()
-                .filter(p -> !p.getId().equals(me.getId()))
+                .filter(p -> !p.getId().equals(getLocalPlayer().getId()))
                 .findFirst()
                 .orElseThrow();
 
-        int opponentCardCount = opponent.getHand().size();
-        for (int i = 0; i < opponentCardCount; i++) {
+        for (int i = 0; i < opponent.getHand().size(); i++) {
             hbOpponentHand.getChildren().add(UIUtils.createCardNode(null, false));
         }
+    }
 
-        Card topDiscard = state.getDeck().peekTopCard();
-        if (topDiscard != null) {
-            spDiscardPile.getChildren().add(UIUtils.createCardNode(topDiscard, true));
+    private void renderDiscardPile(GameState state) {
+        Card top = state.getDeck().peekTopCard();
+        if (top != null) {
+            spDiscardPile.getChildren().add(UIUtils.createCardNode(top, true));
         }
+    }
 
-        Node drawPileNode = UIUtils.createCardNode(null, false);
+    private void renderDrawPile(GameState state) {
+        Node drawNode = UIUtils.createCardNode(null, false);
+        boolean myTurn = gameEngine.isPlayersTurn(getLocalPlayer().getId());
+
+        drawNode.setOpacity(myTurn ? 1.0 : 0.6);
 
         if (myTurn) {
-            drawPileNode.setOnMouseClicked(e -> handleDrawCardClick());
-            drawPileNode.setCursor(Cursor.HAND);
-            drawPileNode.setOpacity(1.0);
-        } else {
-            drawPileNode.setOpacity(0.6);
-            drawPileNode.setOnMouseClicked(null);
+            drawNode.setCursor(Cursor.HAND);
+            drawNode.setOnMouseClicked(e -> handleDrawCardClick());
         }
 
-        spDrawPile.getChildren().add(drawPileNode);
+        spDrawPile.getChildren().add(drawNode);
+    }
 
+    private void maybeRunComputerMove(GameState state) {
         if (playerType == PlayerType.SINGLEPLAYER && isComputerTurn(state)) {
             runComputerMove();
         }

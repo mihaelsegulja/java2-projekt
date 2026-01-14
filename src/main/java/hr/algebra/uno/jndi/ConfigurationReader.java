@@ -1,5 +1,8 @@
 package hr.algebra.uno.jndi;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.io.FileReader;
@@ -8,6 +11,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 
 public class ConfigurationReader {
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationReader.class);
     private static Properties properties;
 
     private ConfigurationReader() {}
@@ -23,7 +27,7 @@ public class ConfigurationReader {
             properties.load(new FileReader(configurationObject.toString()));
         }
         catch (NamingException | IOException e) {
-            e.printStackTrace();
+            log.error("Error while initializing ConfigurationReader.", e);
         }
     }
 
