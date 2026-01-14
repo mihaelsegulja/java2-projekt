@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import static hr.algebra.uno.UnoApplication.playerType;
 
-public class ChatUtils {
+public final class ChatUtils {
     private static final Logger log = LoggerFactory.getLogger(ChatUtils.class);
 
     private ChatUtils() {}

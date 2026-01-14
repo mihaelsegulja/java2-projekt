@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static hr.algebra.uno.UnoApplication.playerType;
 
@@ -46,7 +45,9 @@ public class GameController {
     private NetworkManager networkManager;
     private static final int PLAYER_1_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_1_SERVER_PORT);
     private static final int PLAYER_2_PORT = ConfigurationReader.getIntegerValueForKey(ConfigurationKey.PLAYER_2_SERVER_PORT);
-    ChatRemoteService chatRemoteService;
+    private ChatRemoteService chatRemoteService;
+    private boolean computerThinking = false;
+
 
     public void initialize() {
         config = GameConfigParser.load();
@@ -81,9 +82,7 @@ public class GameController {
                 gameEngine.startNewGame(List.of(
                         new Player(PlayerType.PLAYER_1.toString(), "Player 1"),
                         new Player(PlayerType.PLAYER_2.toString(), "Player 2")));
-                if (networkManager != null) {
-                    networkManager.sendGameState(gameEngine.getGameState());
-                }
+                syncNetworkState();
                 renderGameState();
             }
             case PLAYER_2 -> {
@@ -106,19 +105,12 @@ public class GameController {
         spDrawPile.setDisable(false);
         btnUno.setDisable(false);
         btnUno.setVisible(false);
-
-        hbPlayerHand.getChildren().clear();
-        hbOpponentHand.getChildren().clear();
-        spDrawPile.getChildren().clear();
-        spDiscardPile.getChildren().clear();
+        clearBoard();
     }
 
     public void renderGameState() {
         GameState state = gameEngine.getGameState();
-        hbPlayerHand.getChildren().clear();
-        hbOpponentHand.getChildren().clear();
-        spDrawPile.getChildren().clear();
-        spDiscardPile.getChildren().clear();
+        clearBoard();
 
         if (state.isGameOver()) {
             DialogUtils.showWinnerDialog(state.getWinnerName());
@@ -131,8 +123,8 @@ public class GameController {
         Player me = getLocalPlayer();
         boolean myTurn = gameEngine.isPlayersTurn(me.getId());
 
-        log.info("Current turn: {}", currPlayer);
-        log.info("Local player resolved as: {}", me.getName());
+        log.debug("Current turn: {}", currPlayer);
+        log.debug("Local player resolved as: {}", me.getName());
 
         btnUno.setVisible(me.isMustCallUno() && !me.isUnoCalled());
         btnUno.setDisable(!(me.isMustCallUno() && !me.isUnoCalled()));
@@ -150,7 +142,7 @@ public class GameController {
 
             if (playable) {
                 cardNode.setStyle("""
-        -fx-effect: dropshadow(gaussian, rgba(255, 0, 132, 0.8), 15, 0.5, 0, 0);
+        -fx-effect: dropshadow(gaussian, rgba(255, 0, 132, 0.9), 15, 0.5, 0, 0);
         """);
             }
 
@@ -201,45 +193,13 @@ public class GameController {
     }
 
     private void runComputerMove() {
-        GameState state = gameEngine.getGameState();
-        Player computer = state.getCurrentPlayer();
-
-        new Thread(() -> {
-            try {
-                int delay = ThreadLocalRandom.current().nextInt(
-                        config.getComputerThinkingDelayMin(),
-                        config.getComputerThinkingDelayMax()
-                );
-                Thread.sleep(delay);
-            } catch (InterruptedException ignored) {}
-
-            Platform.runLater(() -> {
-                Card playable = computer.getHand().stream()
-                        .filter(card -> gameEngine.isValidMove(card, state.getDeck().peekTopCard()))
-                        .findFirst()
-                        .orElse(null);
-
-                if (playable != null) {
-                    Color chosenColor = null;
-                    if (playable.getValue() == Value.WILD || playable.getValue() == Value.WILD_DRAW_FOUR) {
-                        chosenColor = GameUtils.generateRandomColor();
-                    }
-                    gameEngine.playCard(computer, playable, chosenColor);
-                } else {
-                    gameEngine.drawCard(computer);
-                    gameEngine.nextTurn();
-                }
-
-                if (computer.isMustCallUno()
-                        && !computer.isUnoCalled()
-                        && ThreadLocalRandom.current().nextDouble()
-                        < config.getComputerCallUnoProbability()) {
-                    gameEngine.callUno(computer);
-                }
-
-                renderGameState();
-            });
-        }).start();
+        if (computerThinking) return;
+        computerThinking = true;
+        ComputerHelper.performMove(gameEngine, config, () -> {
+            computerThinking = false;
+            syncNetworkState();
+            renderGameState();
+        });
     }
 
     private void handleCardClick(Card card) {
@@ -251,9 +211,7 @@ public class GameController {
         } else {
             gameEngine.playCard(current, card, null);
         }
-        if (networkManager != null) {
-            networkManager.sendGameState(gameEngine.getGameState());
-        }
+        syncNetworkState();
         renderGameState();
     }
 
@@ -261,9 +219,7 @@ public class GameController {
         Player current = getLocalPlayer();
         lbStatus.setText(current.getName() + "'s turn");
         gameEngine.drawCard(current);
-        if (networkManager != null) {
-            networkManager.sendGameState(gameEngine.getGameState());
-        }
+        syncNetworkState();
         renderGameState();
     }
 
@@ -274,9 +230,7 @@ public class GameController {
     public void loadGame() {
         GameState loaded = GameUtils.loadGame();
         gameEngine.setGameState(loaded);
-        if (networkManager != null) {
-            networkManager.sendGameState(gameEngine.getGameState());
-        }
+        syncNetworkState();
         renderGameState();
     }
 
@@ -311,9 +265,7 @@ public class GameController {
         if (current.isMustCallUno() && !current.isUnoCalled()) {
             gameEngine.callUno(current);
             btnUno.setVisible(false);
-            if (networkManager != null) {
-                networkManager.sendGameState(gameEngine.getGameState());
-            }
+            syncNetworkState();
         }
     }
 
@@ -324,6 +276,19 @@ public class GameController {
 
     private Player getLocalPlayer() {
         return gameEngine.getPlayerById(playerType.toString());
+    }
+
+    private void syncNetworkState() {
+        if (networkManager != null) {
+            networkManager.sendGameState(gameEngine.getGameState());
+        }
+    }
+
+    private void clearBoard() {
+        hbPlayerHand.getChildren().clear();
+        hbOpponentHand.getChildren().clear();
+        spDrawPile.getChildren().clear();
+        spDiscardPile.getChildren().clear();
     }
 
     public void quitGame() {

@@ -73,7 +73,7 @@ public class NetworkManager {
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
             oos.writeObject(state);
-            log.info("{}, {}", state.getCurrentPlayer().getId(), state.getDeck().peekTopCard());
+            log.debug("{}, {}", state.getCurrentPlayer().getId(), state.getDeck().peekTopCard());
             log.info("[{}] GameState sent to port {}", playerType, targetPort);
             log.info("Response: {}", ois.readObject());
         } catch (IOException | ClassNotFoundException e) {
